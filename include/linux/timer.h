@@ -201,11 +201,11 @@ extern void timer_quiesce_cpu(void *cpup);
 
 extern struct timer_base timer_base_deferrable;
 
+extern int try_to_del_timer_sync(struct timer_list *timer);
+
 #ifdef CONFIG_SMP
-  extern int try_to_del_timer_sync(struct timer_list *timer);
   extern int del_timer_sync(struct timer_list *timer);
 #else
-# define try_to_del_timer_sync(t)	del_timer(t)
 # define del_timer_sync(t)		del_timer(t)
 #endif
 
