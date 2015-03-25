@@ -1836,6 +1836,13 @@ static inline void timer_register_cpu_notifier(void)
 static inline void timer_register_cpu_notifier(void) { }
 #endif /* CONFIG_HOTPLUG_CPU */
 
+#ifdef CONFIG_CPUSETS
+void timer_quiesce_cpu(void *cpup)
+{
+	__migrate_timers(*(unsigned int *)cpup, false);
+}
+#endif /* CONFIG_CPUSETS */
+
 static void __init init_timer_cpu(int cpu)
 {
 	struct timer_base *base;
