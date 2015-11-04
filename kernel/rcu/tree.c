@@ -4492,8 +4492,8 @@ static int __init rcu_spawn_gp_kthread(void)
 			sp.sched_priority = kthread_prio;
 			sched_setscheduler_nocheck(t, SCHED_FIFO, &sp);
 		}
-                wake_up_process(t);
 		raw_spin_unlock_irqrestore_rcu_node(rnp, flags);
+		wake_up_process(t);
 	}
 	rcu_spawn_nocb_kthreads();
 	rcu_spawn_boost_kthreads();
