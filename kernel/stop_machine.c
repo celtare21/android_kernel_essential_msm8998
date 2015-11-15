@@ -28,7 +28,6 @@
  */
 struct cpu_stop_done {
 	atomic_t		nr_todo;	/* nr left to execute */
-	bool			executed;	/* actually executed? */
 	int			ret;		/* collected return value */
 	struct completion	completion;	/* fired if nr_todo reaches 0 */
 };
@@ -59,11 +58,9 @@ static void cpu_stop_init_done(struct cpu_stop_done *done, unsigned int nr_todo)
 }
 
 /* signal completion unless @done is NULL */
-static void cpu_stop_signal_done(struct cpu_stop_done *done, bool executed)
+static void cpu_stop_signal_done(struct cpu_stop_done *done)
 {
 	if (done) {
-		if (executed)
-			done->executed = true;
 		if (atomic_dec_and_test(&done->nr_todo))
 			complete(&done->completion);
 	}
@@ -88,7 +85,7 @@ static bool cpu_stop_queue_work(unsigned int cpu, struct cpu_stop_work *work)
 	if (enabled)
 		__cpu_stop_queue_work(stopper, work);
 	else
-		cpu_stop_signal_done(work->done, false);
+		cpu_stop_signal_done(work->done);
 	spin_unlock_irqrestore(&stopper->lock, flags);
 
 	return enabled;
@@ -132,7 +129,6 @@ int stop_one_cpu(unsigned int cpu, cpu_stop_fn_t fn, void *arg)
 	 */
 	cond_resched();
 	wait_for_completion(&done.completion);
-	WARN_ON(!done.executed);
 	return done.ret;
 }
 
@@ -310,7 +306,6 @@ int stop_two_cpus(unsigned int cpu1, unsigned int cpu2, cpu_stop_fn_t fn, void *
 		return -ENOENT;
 
 	wait_for_completion(&done.completion);
-	WARN_ON(!done.executed);
 	return done.ret;
 }
 
@@ -377,7 +372,6 @@ static int __stop_cpus(const struct cpumask *cpumask,
 	if (!queue_stop_cpus_work(cpumask, fn, arg, &done))
 		return -ENOENT;
 	wait_for_completion(&done.completion);
-	WARN_ON(!done.executed);
 	return done.ret;
 }
 
@@ -490,6 +484,7 @@ repeat:
 		ret = fn(arg);
 		if (ret && done)
 			done->ret = ret;
+		cpu_stop_signal_done(done);
 
 		/* restore preemption and check it's still balanced */
 		preempt_enable();
@@ -498,7 +493,6 @@ repeat:
 			  kallsyms_lookup((unsigned long)fn, NULL, NULL, NULL,
 					  ksym_buf), arg);
 
-		cpu_stop_signal_done(done, true);
 		goto repeat;
 	}
 }
