@@ -1843,6 +1843,7 @@ static void blk_mq_map_swqueue(struct request_queue *q,
 		hctx->tags = set->tags[i];
 		WARN_ON(!hctx->tags);
 
+		cpumask_copy(hctx->tags->cpumask, hctx->cpumask);
 		/*
 		 * Set the map size to the number of mapped software queues.
 		 * This is more accurate and more efficient than looping
@@ -1862,12 +1863,6 @@ static void blk_mq_map_swqueue(struct request_queue *q,
 			hctx->next_cpu = cpumask_first(hctx->cpumask);
 			hctx->next_cpu_batch = BLK_MQ_CPU_WORK_BATCH;
 		}
-	}
-
-	queue_for_each_ctx(q, ctx, i) {
-		hctx = q->mq_ops->map_queue(q, i);
-		if (cpumask_test_cpu(i, online_mask))
-			cpumask_set_cpu(i, hctx->tags->cpumask);
 	}
 }
 
