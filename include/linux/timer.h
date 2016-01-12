@@ -156,6 +156,8 @@ static inline void init_timer_on_stack_key(struct timer_list *timer,
 	__setup_timer((timer), (fn), (data), 0)
 #define setup_pinned_timer(timer, fn, data)				\
 	__setup_timer((timer), (fn), (data), TIMER_PINNED)
+#define setup_deferrable_timer(timer, fn, data)                         \
+        __setup_timer((timer), (fn), (data), TIMER_DEFERRABLE)
 #define setup_pinned_deferrable_timer(timer, fn, data)			\
 	__setup_timer((timer), (fn), (data), TIMER_DEFERRABLE | TIMER_PINNED)
 #define setup_timer_on_stack(timer, fn, data)				\
