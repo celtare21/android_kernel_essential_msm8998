@@ -224,7 +224,7 @@ int fuse_open_common(struct inode *inode, struct file *file, bool isdir)
 		return err;
 
 	if (lock_inode)
-		mutex_lock(&inode->i_mutex);
+		inode_lock(inode);
 
 	err = fuse_do_open(fc, get_node_id(inode), file, isdir);
 
@@ -232,7 +232,7 @@ int fuse_open_common(struct inode *inode, struct file *file, bool isdir)
 		fuse_finish_open(inode, file);
 
 	if (lock_inode)
-		mutex_unlock(&inode->i_mutex);
+		inode_unlock(inode);
 
 	return err;
 }
@@ -432,9 +432,9 @@ static int fuse_flush(struct file *file, fl_owner_t id)
 	if (err)
 		return err;
 
-	mutex_lock(&inode->i_mutex);
+	inode_lock(inode);
 	fuse_sync_writes(inode);
-	mutex_unlock(&inode->i_mutex);
+	inode_unlock(inode);
 
 	if (test_bit(AS_ENOSPC, &file->f_mapping->flags) &&
 	    test_and_clear_bit(AS_ENOSPC, &file->f_mapping->flags))
@@ -478,7 +478,7 @@ int fuse_fsync_common(struct file *file, loff_t start, loff_t end,
 	if (is_bad_inode(inode))
 		return -EIO;
 
-	mutex_lock(&inode->i_mutex);
+	inode_lock(inode);
 
 	/*
 	 * Start writeback against all dirty pages of the inode, then
@@ -529,7 +529,7 @@ int fuse_fsync_common(struct file *file, loff_t start, loff_t end,
 		err = 0;
 	}
 out:
-	mutex_unlock(&inode->i_mutex);
+	inode_unlock(inode);
 	return err;
 }
 
@@ -1255,7 +1255,7 @@ static ssize_t fuse_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 		return generic_file_write_iter(iocb, from);
 	}
 
-	mutex_lock(&inode->i_mutex);
+	inode_lock(inode);
 
 	/* We can write back this queue in page reclaim */
 	current->backing_dev_info = inode_to_bdi(inode);
@@ -1311,7 +1311,7 @@ static ssize_t fuse_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	}
 out:
 	current->backing_dev_info = NULL;
-	mutex_unlock(&inode->i_mutex);
+	inode_unlock(inode);
 
 	return written ? written : err;
 }
@@ -1424,10 +1424,10 @@ ssize_t fuse_direct_io(struct fuse_io_priv *io, struct iov_iter *iter,
 
 	if (!cuse && fuse_range_is_writeback(inode, idx_from, idx_to)) {
 		if (!write)
-			mutex_lock(&inode->i_mutex);
+			inode_lock(inode);
 		fuse_sync_writes(inode);
 		if (!write)
-			mutex_unlock(&inode->i_mutex);
+			inode_unlock(inode);
 	}
 
 	while (count) {
@@ -1515,14 +1515,14 @@ static ssize_t fuse_direct_write_iter(struct kiocb *iocb, struct iov_iter *from)
 		return -EIO;
 
 	/* Don't allow parallel writes to the same file */
-	mutex_lock(&inode->i_mutex);
+	inode_lock(inode);
 	res = generic_write_checks(iocb, from);
 	if (res > 0)
 		res = fuse_direct_io(&io, from, &iocb->ki_pos, FUSE_DIO_WRITE);
 	fuse_invalidate_attr(inode);
 	if (res > 0)
 		fuse_write_update_size(inode, iocb->ki_pos);
-	mutex_unlock(&inode->i_mutex);
+	inode_unlock(inode);
 
 	return res;
 }
@@ -2354,11 +2354,11 @@ static loff_t fuse_file_llseek(struct file *file, loff_t offset, int whence)
 	if (whence == SEEK_CUR || whence == SEEK_SET)
 		return generic_file_llseek(file, offset, whence);
 
-	mutex_lock(&inode->i_mutex);
+        inode_lock(inode);
 	retval = fuse_update_attributes(inode, NULL, file, NULL);
 	if (!retval)
 		retval = generic_file_llseek(file, offset, whence);
-	mutex_unlock(&inode->i_mutex);
+        inode_unlock(inode);
 
 	return retval;
 }
@@ -3009,7 +3009,7 @@ static long fuse_file_fallocate(struct file *file, int mode, loff_t offset,
 		return -EOPNOTSUPP;
 
 	if (lock_inode) {
-		mutex_lock(&inode->i_mutex);
+		inode_lock(inode);
 		if (mode & FALLOC_FL_PUNCH_HOLE) {
 			loff_t endbyte = offset + length - 1;
 			err = filemap_write_and_wait_range(inode->i_mapping,
@@ -3055,7 +3055,7 @@ out:
 		clear_bit(FUSE_I_SIZE_UNSTABLE, &fi->state);
 
 	if (lock_inode)
-		mutex_unlock(&inode->i_mutex);
+		inode_unlock(inode);
 
 	return err;
 }
