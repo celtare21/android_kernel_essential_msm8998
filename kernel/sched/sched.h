@@ -8,6 +8,7 @@
 #include <linux/irq_work.h>
 #include <linux/tick.h>
 #include <linux/slab.h>
+#include <linux/cpufreq.h>
 
 #include "cpupri.h"
 #include "cpudeadline.h"
