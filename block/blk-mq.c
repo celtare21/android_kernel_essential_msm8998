@@ -1792,7 +1792,8 @@ static void blk_mq_map_swqueue(struct request_queue *q,
 	/*
 	 * Map software to hardware queues
 	 */
-	queue_for_each_ctx(q, ctx, i) {
+	for_each_possible_cpu(i) {
+		ctx = per_cpu_ptr(q->queue_ctx, i);
 		hctx = q->mq_ops->map_queue(q, i);
 		if (cpumask_test_cpu(i, online_mask))
 			cpumask_set_cpu(i, hctx->cpumask);
