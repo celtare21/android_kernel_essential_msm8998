@@ -59,6 +59,7 @@ struct timer_list {
 #define TIMER_DEFERRABLE	0x00100000
 #define TIMER_IRQSAFE		0x00200000
 #define TIMER_PINNED_ON_CPU	0x00400000
+#define TIMER_PINNED		0x00600000
 
 #define __TIMER_INITIALIZER(_function, _expires, _data, _flags) { \
 		.entry = { .next = TIMER_ENTRY_STATIC },	\
@@ -74,8 +75,14 @@ struct timer_list {
 #define TIMER_INITIALIZER(_function, _expires, _data)		\
 	__TIMER_INITIALIZER((_function), (_expires), (_data), 0)
 
+#define TIMER_PINNED_INITIALIZER(_function, _expires, _data)	\
+	__TIMER_INITIALIZER((_function), (_expires), (_data), TIMER_PINNED)
+
 #define TIMER_DEFERRED_INITIALIZER(_function, _expires, _data)	\
 	__TIMER_INITIALIZER((_function), (_expires), (_data), TIMER_DEFERRABLE)
+
+#define TIMER_PINNED_DEFERRED_INITIALIZER(_function, _expires, _data)	\
+	__TIMER_INITIALIZER((_function), (_expires), (_data), TIMER_DEFERRABLE | TIMER_PINNED)
 
 #define DEFINE_TIMER(_name, _function, _expires, _data)		\
 	struct timer_list _name =				\
@@ -120,8 +127,12 @@ static inline void init_timer_on_stack_key(struct timer_list *timer,
 
 #define init_timer(timer)						\
 	__init_timer((timer), 0)
+#define init_timer_pinned(timer)					\
+	__init_timer((timer), TIMER_PINNED)
 #define init_timer_deferrable(timer)					\
 	__init_timer((timer), TIMER_DEFERRABLE)
+#define init_timer_pinned_deferrable(timer)				\
+	__init_timer((timer), TIMER_DEFERRABLE | TIMER_PINNED)
 #define init_timer_on_stack(timer)					\
 	__init_timer_on_stack((timer), 0)
 
@@ -141,10 +152,23 @@ static inline void init_timer_on_stack_key(struct timer_list *timer,
 
 #define setup_timer(timer, fn, data)					\
 	__setup_timer((timer), (fn), (data), 0)
+<<<<<<< HEAD
+=======
+#define setup_pinned_timer(timer, fn, data)				\
+	__setup_timer((timer), (fn), (data), TIMER_PINNED)
+#define setup_deferrable_timer(timer, fn, data)				\
+	__setup_timer((timer), (fn), (data), TIMER_DEFERRABLE)
+#define setup_pinned_deferrable_timer(timer, fn, data)			\
+	__setup_timer((timer), (fn), (data), TIMER_DEFERRABLE | TIMER_PINNED)
+>>>>>>> e675447bda51... timers: Make 'pinned' a timer property
 #define setup_timer_on_stack(timer, fn, data)				\
 	__setup_timer_on_stack((timer), (fn), (data), 0)
+#define setup_pinned_timer_on_stack(timer, fn, data)			\
+	__setup_timer_on_stack((timer), (fn), (data), TIMER_PINNED)
 #define setup_deferrable_timer_on_stack(timer, fn, data)		\
 	__setup_timer_on_stack((timer), (fn), (data), TIMER_DEFERRABLE)
+#define setup_pinned_deferrable_timer_on_stack(timer, fn, data)		\
+	__setup_timer_on_stack((timer), (fn), (data), TIMER_DEFERRABLE | TIMER_PINNED)
 
 /**
  * timer_pending - is a timer pending?
@@ -172,8 +196,8 @@ extern void set_timer_slack(struct timer_list *time, int slack_hz);
 extern bool check_pending_deferrable_timers(int cpu);
 #endif
 
-#define TIMER_NOT_PINNED	0
-#define TIMER_PINNED		1
+#define MOD_TIMER_NOT_PINNED	0
+#define MOD_TIMER_PINNED	1
 /*
  * The jiffies value which is added to now, when there is no timer
  * in the timer wheel:
