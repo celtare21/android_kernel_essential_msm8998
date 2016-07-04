@@ -60,6 +60,8 @@ struct timer_list {
 #define TIMER_IRQSAFE		0x00200000
 #define TIMER_PINNED_ON_CPU	0x00400000
 #define TIMER_PINNED		0x00600000
+#define TIMER_ARRAYSHIFT	22
+#define TIMER_ARRAYMASK		0xFFC00000
 
 #define __TIMER_INITIALIZER(_function, _expires, _data, _flags) { \
 		.entry = { .next = TIMER_ENTRY_STATIC },	\
@@ -152,15 +154,10 @@ static inline void init_timer_on_stack_key(struct timer_list *timer,
 
 #define setup_timer(timer, fn, data)					\
 	__setup_timer((timer), (fn), (data), 0)
-<<<<<<< HEAD
-=======
 #define setup_pinned_timer(timer, fn, data)				\
 	__setup_timer((timer), (fn), (data), TIMER_PINNED)
-#define setup_deferrable_timer(timer, fn, data)				\
-	__setup_timer((timer), (fn), (data), TIMER_DEFERRABLE)
 #define setup_pinned_deferrable_timer(timer, fn, data)			\
 	__setup_timer((timer), (fn), (data), TIMER_DEFERRABLE | TIMER_PINNED)
->>>>>>> e675447bda51... timers: Make 'pinned' a timer property
 #define setup_timer_on_stack(timer, fn, data)				\
 	__setup_timer_on_stack((timer), (fn), (data), 0)
 #define setup_pinned_timer_on_stack(timer, fn, data)			\
