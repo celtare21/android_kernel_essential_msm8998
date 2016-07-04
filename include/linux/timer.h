@@ -19,7 +19,6 @@ struct timer_list {
 	void			(*function)(unsigned long);
 	unsigned long		data;
 	u32			flags;
-	int			slack;
 
 #ifdef CONFIG_LOCKDEP
 	struct lockdep_map	lockdep_map;
@@ -69,7 +68,6 @@ struct timer_list {
 		.expires = (_expires),				\
 		.data = (_data),				\
 		.flags = (_flags),				\
-		.slack = -1,					\
 		__TIMER_LOCKDEP_MAP_INITIALIZER(		\
 			__FILE__ ":" __stringify(__LINE__))	\
 	}
@@ -189,7 +187,6 @@ extern int del_timer(struct timer_list * timer);
 extern int mod_timer(struct timer_list *timer, unsigned long expires);
 extern int mod_timer_pending(struct timer_list *timer, unsigned long expires);
 
-extern void set_timer_slack(struct timer_list *time, int slack_hz);
 #ifdef CONFIG_SMP
 extern bool check_pending_deferrable_timers(int cpu);
 #endif
