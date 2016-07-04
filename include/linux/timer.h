@@ -56,9 +56,17 @@ struct timer_list {
 #define TIMER_CPUMASK		0x0007FFFF
 #define TIMER_MIGRATING		0x00080000
 #define TIMER_BASEMASK		(TIMER_CPUMASK | TIMER_MIGRATING)
+<<<<<<< HEAD
 #define TIMER_DEFERRABLE	0x00100000
 #define TIMER_PINNED		0x00200000
 #define TIMER_IRQSAFE		0x00400000
+=======
+#define TIMER_DEFERRABLE	0x00080000
+#define TIMER_PINNED		0x00100000
+#define TIMER_IRQSAFE		0x00200000
+#define TIMER_ARRAYSHIFT	22
+#define TIMER_ARRAYMASK		0xFFC00000
+>>>>>>> 500462a9de65... timers: Switch to a non-cascading wheel
 
 #define __TIMER_INITIALIZER(_function, _expires, _data, _flags) { \
 		.entry = { .next = TIMER_ENTRY_STATIC },	\
