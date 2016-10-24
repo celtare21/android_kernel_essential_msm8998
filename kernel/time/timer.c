@@ -934,6 +934,8 @@ __mod_timer(struct timer_list *timer, unsigned long expires, bool pending_only)
 	unsigned long clk = 0, flags;
 	int ret = 0;
 
+	BUG_ON(!timer->function);
+
 	/*
 	 * This is a common optimization triggered by the networking code - if
 	 * the timer is re-modified to have the same timeout or ends up in the
@@ -942,13 +944,16 @@ __mod_timer(struct timer_list *timer, unsigned long expires, bool pending_only)
 	if (timer_pending(timer)) {
 		if (timer->expires == expires)
 			return 1;
-		/*
-		 * Take the current timer_jiffies of base, but without holding
-		 * the lock!
-		 */
-		base = get_timer_base(timer->flags);
-		clk = base->clk;
 
+		/*
+		 * We lock timer base and calculate the bucket index right
+		 * here. If the timer ends up in the same bucket, then we
+		 * just update the expiry time and avoid the whole
+		 * dequeue/enqueue dance.
+		 */
+		base = lock_timer_base(timer, &flags);
+
+		clk = base->clk;
 		idx = calc_wheel_index(expires, clk);
 
 		/*
@@ -958,13 +963,12 @@ __mod_timer(struct timer_list *timer, unsigned long expires, bool pending_only)
 		 */
 		if (idx == timer_get_idx(timer)) {
 			timer->expires = expires;
-			return 1;
+			ret = 1;
+			goto out_unlock;
 		}
+	} else {
+		base = lock_timer_base(timer, &flags);
 	}
-
-	BUG_ON(!timer->function);
-
-	base = lock_timer_base(timer, &flags);
 
 	ret = detach_if_pending(timer, base, false);
 	if (!ret && pending_only)
@@ -997,9 +1001,10 @@ __mod_timer(struct timer_list *timer, unsigned long expires, bool pending_only)
 	timer->expires = expires;
 	/*
 	 * If 'idx' was calculated above and the base time did not advance
-	 * between calculating 'idx' and taking the lock, only enqueue_timer()
-	 * and trigger_dyntick_cpu() is required. Otherwise we need to
-	 * (re)calculate the wheel index via internal_add_timer().
+	 * between calculating 'idx' and possibly switching the base, only
+	 * enqueue_timer() and trigger_dyntick_cpu() is required. Otherwise
+	 * we need to (re)calculate the wheel index via
+	 * internal_add_timer().
 	 */
 	if (idx != UINT_MAX && clk == base->clk) {
 		enqueue_timer(base, timer, idx);
