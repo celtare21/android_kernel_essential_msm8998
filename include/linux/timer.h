@@ -196,6 +196,8 @@ extern int mod_timer_pending(struct timer_list *timer, unsigned long expires);
 /* To be used from cpusets, only */
 extern void timer_quiesce_cpu(void *cpup);
 
+extern struct timer_base timer_base_deferrable;
+
 #ifdef CONFIG_SMP
   extern int del_timer_sync(struct timer_list *timer);
 #else
