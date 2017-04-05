@@ -156,6 +156,8 @@ static inline void __run_deferrable_timers(void)
 		tick_do_timer_cpu == smp_processor_id()) {
 		if (time_after_eq(jiffies,
 			tvec_base_deferrable.timer_jiffies))
+			tick_do_timer_cpu == TICK_DO_TIMER_NONE) ||
+			tick_do_timer_cpu == smp_processor_id())
 			__run_timers(&tvec_base_deferrable);
 	}
 }
