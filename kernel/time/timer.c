@@ -209,6 +209,7 @@ static inline void __run_timers(struct tvec_base *base);
 
 static DEFINE_PER_CPU(struct timer_base, timer_bases[NR_BASES]);
 struct timer_base timer_base_deferrable;
+static atomic_t deferrable_pending;
 
 #if defined(CONFIG_SMP) && defined(CONFIG_NO_HZ_COMMON)
 unsigned int sysctl_timer_migration = 1;
@@ -1518,9 +1519,10 @@ static u64 cmp_next_hrtimer_event(u64 basem, u64 expires)
 	return DIV_ROUND_UP_ULL(nextevt, TICK_NSEC) * TICK_NSEC;
 }
 
+
 #ifdef CONFIG_SMP
 /*
- * check_pending_deferrable_timers - Check for unbound deferrable timer expiry.
+ * check_pending_deferrable_timers - Check for unbound deferrable timer expiry
  * @cpu - Current CPU
  *
  * The function checks whether any global deferrable pending timers
@@ -1533,7 +1535,7 @@ bool check_pending_deferrable_timers(int cpu)
 {
 	if (cpu == tick_do_timer_cpu ||
 		tick_do_timer_cpu == TICK_DO_TIMER_NONE) {
-		if (time_after_eq(jiffies, tvec_base_deferrable.timer_jiffies)
+		if (time_after_eq(jiffies, timer_base_deferrable.clk)
 			&& !atomic_cmpxchg(&deferrable_pending, 0, 1)) {
 			return true;
 		}
@@ -1703,10 +1705,13 @@ static void run_timer_softirq(struct softirq_action *h)
 	__run_deferrable_timers();
 
 	__run_timers(base);
-	if (IS_ENABLED(CONFIG_NO_HZ_COMMON) && base->nohz_active) {
-		__run_timers(&timer_base_deferrable);
+	if (IS_ENABLED(CONFIG_NO_HZ_COMMON) && base->nohz_active)
 		__run_timers(this_cpu_ptr(&timer_bases[BASE_DEF]));
-	}
+
+	if ((atomic_cmpxchg(&deferrable_pending, 1, 0) &&
+		tick_do_timer_cpu == TICK_DO_TIMER_NONE) ||
+		tick_do_timer_cpu == smp_processor_id())
+		__run_timers(&timer_base_deferrable);
 }
 
 /*

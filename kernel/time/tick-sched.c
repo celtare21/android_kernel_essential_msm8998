@@ -24,6 +24,7 @@
 #include <linux/irq_work.h>
 #include <linux/posix-timers.h>
 #include <linux/perf_event.h>
+#include <linux/timer.h>
 #include <linux/context_tracking.h>
 #include <linux/rq_stats.h>
 #include <linux/mm.h>
@@ -841,6 +842,11 @@ static void __tick_nohz_idle_enter(struct tick_sched *ts)
 {
 	ktime_t now, expires;
 	int cpu = smp_processor_id();
+
+#ifdef CONFIG_SMP
+	if (check_pending_deferrable_timers(cpu))
+		raise_softirq_irqoff(TIMER_SOFTIRQ);
+#endif
 
 #ifdef CONFIG_SMP
 	if (check_pending_deferrable_timers(cpu))
