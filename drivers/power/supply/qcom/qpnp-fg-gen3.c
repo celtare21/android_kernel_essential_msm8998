@@ -4845,6 +4845,7 @@ static int fg_gen3_probe(struct platform_device *pdev)
 	chip->debug_mask = &fg_gen3_debug_mask;
 	chip->irqs = fg_irqs;
 	chip->charge_status = -EINVAL;
+	chip->prev_charge_status = -EINVAL;
 	chip->ki_coeff_full_soc = -EINVAL;
 	chip->online_status = -EINVAL;
 	chip->regmap = dev_get_regmap(chip->dev->parent, NULL);
