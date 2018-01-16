@@ -88,7 +88,7 @@ short backlight_min = 0;
 module_param(backlight_min, short, 0755);
 
 #define MDSS_BRIGHT_TO_BL_DIM(out, v) do {\
-			out = (12*v*v+1393*v+3060)/4465;\
+			out = ((v) * (v) * 255  / 4095 + (v) * (255 - (v)) / 32);\
 			} while (0)
 
 bool backlight_dimmer = false;
