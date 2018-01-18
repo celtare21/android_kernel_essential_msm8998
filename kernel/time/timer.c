@@ -1950,8 +1950,14 @@ static void __migrate_timers(int cpu, bool remove_pinned)
 		spin_lock_irq(&new_base->lock, flags);
 		spin_lock_nested(&old_base->lock, SINGLE_DEPTH_NESTING);
 
-		if (!cpu_online(cpu))
-			BUG_ON(old_base->running_timer);
+		/*
+		 * The current CPUs base clock might be stale. Update it
+		 * before moving the timers over.
+		 */
+		forward_timer_base(new_base);
+
+                if (!cpu_online(cpu))
+                        BUG_ON(old_base->running_timer);
 
 		for (i = 0; i < WHEEL_SIZE; i++)
 			migrate_timer_list(new_base, old_base->vectors + i);
