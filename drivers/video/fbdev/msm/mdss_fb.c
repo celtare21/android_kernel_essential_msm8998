@@ -84,11 +84,8 @@
  */
 #define MDP_TIME_PERIOD_CALC_FPS_US	1000000
 
-int backlight_min = 0;
-int backlight_max = 255;
-
-module_param(backlight_min, int, 0755);
-module_param(backlight_max, int, 0755);
+short backlight_min = 0;
+module_param(backlight_min, short, 0755);
 
 static struct fb_info *fbi_list[MAX_FBI_LIST];
 static int fbi_list_index;
@@ -298,14 +295,7 @@ static void mdss_fb_set_bl_brightness(struct led_classdev *led_cdev,
 	if (value > mfd->panel_info->brightness_max)
 		value = mfd->panel_info->brightness_max;
 
-	if (value != 0)
-	{
-		if (value < backlight_min)
-			value = backlight_min;
-
-		if (value > backlight_max)
-			value = backlight_max;
-	}
+	value = (value && value < backlight_min) ? backlight_min : value;
 
 	/* This maps android backlight level 0 to 255 into
 	   driver backlight level 0 to bl_max with rounding */
