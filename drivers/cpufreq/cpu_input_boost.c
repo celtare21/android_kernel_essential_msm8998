@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014-2017, Sultanxda <sultanxda@gmail.com>
+ *           (C) 2017, Joe Maples <joe@frap129.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -21,12 +22,16 @@
 
 #define CPU_MASK(cpu) (1U << (cpu))
 
-/*
- * For MSM8996 (big.LITTLE). CPU0 and CPU1 are LITTLE CPUs; CPU2 and CPU3 are
- * big CPUs.
- */
+#if defined(CONFIG_ARCH_MSM8996)
 #define LITTLE_CPU_MASK (CPU_MASK(0) | CPU_MASK(1))
-#define BIG_CPU_MASK    (CPU_MASK(2) | CPU_MASK(3))
+#elif defined(CONFIG_ARCH_MSM8998)
+#define LITTLE_CPU_MASK (CPU_MASK(0) | CPU_MASK(1) | CPU_MASK(2) | CPU_MASK(3))
+#else
+#error Unsupported architecture
+#endif
+
+/* Fingerprint sensor input key */
+#define FINGERPRINT_KEY 0x2ee
 
 /* Available bits for boost_policy state */
 #define DRIVER_ENABLED        (1U << 0)
@@ -36,7 +41,7 @@
 #define INPUT_REBOOST         (1U << 4)
 
 /* The duration in milliseconds for the wake boost */
-#define FB_BOOST_MS (3000)
+#define FB_BOOST_MS (2000)
 
 /*
  * "fb" = "framebuffer". This is the boost that occurs on framebuffer unblank,
@@ -100,7 +105,10 @@ static void unboost_all_cpus(struct boost_policy *b);
 static void update_online_cpu_policy(void);
 static bool validate_cpu_freq(struct cpufreq_frequency_table *pos,
 		uint32_t *freq);
-
+static bool is_initd(const char* p)
+{
+	return strncmp(p, "init", sizeof("init"));
+}
 static void ib_boost_main(struct work_struct *work)
 {
 	struct boost_policy *b = boost_policy_g;
@@ -233,19 +241,26 @@ static int do_cpu_boost(struct notifier_block *nb,
 	struct boost_policy *b = boost_policy_g;
 	struct ib_config *ib = &b->ib;
 	uint32_t boost_freq, state;
+	unsigned int min_freq_boosted;
+	bool initd = !is_initd(current->comm);
 	bool ret;
 
-	if (action != CPUFREQ_ADJUST)
+	if (action != CPUFREQ_ADJUST || unlikely(initd))
 		return NOTIFY_OK;
 
 	state = get_boost_state(b);
+
+	/*
+	* Save policy->min that was set by user/system before boosting.
+	*/
+	min_freq_boosted = policy->min;
 
 	/*
 	 * Don't do anything when the driver is disabled, unless there are
 	 * still CPUs that need to be unboosted.
 	 */
 	if (!(state & DRIVER_ENABLED) &&
-		policy->min == policy->cpuinfo.min_freq)
+		min_freq_boosted == policy->cpuinfo.min_freq)
 		return NOTIFY_OK;
 
 	/* Boost CPU to max frequency for wake boost */
@@ -270,7 +285,11 @@ static int do_cpu_boost(struct notifier_block *nb,
 			set_boost_freq(b, policy->cpu, boost_freq);
 		policy->min = min(policy->max, boost_freq);
 	} else {
-		policy->min = policy->cpuinfo.min_freq;
+		/*
+		* Set policy->min same as we had it before boosting.
+		* Don't drop it to cpuinfo.min.
+		*/
+		policy->min = min_freq_boosted;
 	}
 
 	return NOTIFY_OK;
@@ -413,6 +432,11 @@ static const struct input_device_id cpu_ib_ids[] = {
 	{
 		.flags = INPUT_DEVICE_ID_MATCH_EVBIT,
 		.evbit = { BIT_MASK(EV_KEY) },
+	},
+	/* fingerprint sensor */
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_KEYBIT,
+		.keybit = { [BIT_WORD(FINGERPRINT_KEY)] = BIT_MASK(FINGERPRINT_KEY) },
 	},
 	{ },
 };
@@ -734,6 +758,17 @@ free_b:
 	return NULL;
 }
 
+static void set_default_value(void)
+{
+	struct boost_policy *b = boost_policy_g;
+	struct ib_config *ib = &b->ib;
+
+	set_boost_bit(b, DRIVER_ENABLED);
+	ib->freq[0] = 1036800;
+	ib->freq[1] = 633600;
+	ib->duration_ms = 100;
+}
+
 static int __init cpu_ib_init(void)
 {
 	struct boost_policy *b;
@@ -776,6 +811,9 @@ static int __init cpu_ib_init(void)
 	cpufreq_register_notifier(&do_cpu_boost_nb, CPUFREQ_POLICY_NOTIFIER);
 
 	fb_register_client(&fb_notifier_callback_nb);
+
+	/* Set default device attributes values */
+	set_default_value();
 
 	return 0;
 
