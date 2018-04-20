@@ -71,3 +71,6 @@ obj-$(CONFIG_MEMORY_STATE_TIME) += memory_state_time.o
 subdir-ccflags-y += \
 	-Wno-ignored-attributes \
 	-Wno-header-guard
+
+KASAN_SANITIZE_compat_qseecom.o := n
+KASAN_SANITIZE_qseecom.o := n
