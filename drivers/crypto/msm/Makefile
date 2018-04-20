@@ -15,3 +15,6 @@ obj-$(CONFIG_CRYPTO_DEV_QCOM_ICE) += ice.o
 subdir-ccflags-y += \
 	$(call cc-option,-Wno-frame-larger-than=) \
 	-Wno-ignored-attributes
+
+KASAN_SANITIZE_compat_qcedev.o := n
+KASAN_SANITIZE_qcedev.o := n
