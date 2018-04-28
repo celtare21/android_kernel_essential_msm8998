@@ -66,9 +66,9 @@
 #include <linux/kexec.h>
 #include <linux/bpf.h>
 #include <linux/mount.h>
-
 #include <asm/uaccess.h>
 #include <asm/processor.h>
+#include <sched/sched.h>
 
 #ifdef CONFIG_X86
 #include <asm/nmi.h>
