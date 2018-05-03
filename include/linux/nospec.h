@@ -66,6 +66,7 @@ static inline unsigned long array_index_mask_nospec(unsigned long index,
 	BUILD_BUG_ON(sizeof(_i) > sizeof(long));			\
 	BUILD_BUG_ON(sizeof(_s) > sizeof(long));			\
 									\
-	(typeof(_i)) (_i & _mask);					\
+	_i &= _mask;							\
+	_i;								\
 })
 #endif /* _LINUX_NOSPEC_H */
