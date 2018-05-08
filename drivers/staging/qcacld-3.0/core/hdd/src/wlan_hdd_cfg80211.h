@@ -249,7 +249,6 @@ typedef enum {
 #define WIFI_FEATURE_CONTROL_ROAMING    0x800000  /* Enable/Disable roaming */
 #define WIFI_FEATURE_IE_WHITELIST       0x1000000 /* Support Probe IE white listing */
 #define WIFI_FEATURE_SCAN_RAND          0x2000000 /* Support MAC & Probe Sequence Number randomization */
-#define WIFI_FEATURE_SET_TX_POWER_LIMIT 0x4000000 /* Support Tx Power Limit setting */
 
 /* Support Tx Power Limit setting */
 #define WIFI_FEATURE_SET_TX_POWER_LIMIT 0x4000000
@@ -609,6 +608,17 @@ void hdd_process_defer_disconnect(hdd_adapter_t *adapter);
 int wlan_hdd_try_disconnect(hdd_adapter_t *adapter);
 
 /**
+ * wlan_hdd_disconnect() - hdd disconnect api
+ * @pAdapter: Pointer to adapter
+ * @reason: Disconnect reason code
+ *
+ * This function is used to issue a disconnect request to SME
+ *
+ * Return: 0 for success, non-zero for failure
+ */
+int wlan_hdd_disconnect(hdd_adapter_t *pAdapter, u16 reason);
+
+/**
  * hdd_bt_activity_cb() - callback function to receive bt activity
  * @context: HDD context
  * @bt_activity: specifies the kind of bt activity
@@ -664,4 +674,22 @@ void wlan_hdd_save_gtk_offload_params(hdd_adapter_t *adapter,
 					     uint8_t *replay_ctr,
 					     bool big_endian,
 					     uint32_t ul_flags);
+
+/*
+ * wlan_hdd_send_sta_authorized_event() - Function to send station authorized
+ * event to user space in case of SAP
+ * @pAdapter: Pointer to the adapter
+ * @pHddCtx: HDD Context
+ * @mac_addr: MAC address of the STA for which the Authorized event needs to
+ * be sent
+ *
+ * This api is used to send station authorized event to user space
+ *
+ * Return: Returns QDF_STATUS_SUCCESS on success else rturns error value
+ */
+
+QDF_STATUS wlan_hdd_send_sta_authorized_event(
+					hdd_adapter_t *pAdapter,
+					hdd_context_t *pHddCtx,
+					const struct qdf_mac_addr *mac_addr);
 #endif

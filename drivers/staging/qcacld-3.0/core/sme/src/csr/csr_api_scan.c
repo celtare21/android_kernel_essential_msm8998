@@ -3129,7 +3129,7 @@ static void csr_check_n_save_wsc_ie(tpAniSirGlobal pMac,
 			    && (0xf2 == pbIe[4]) && (0x04 == pbIe[5])) {
 				/* Founrd it */
 				qdf_mem_copy(pNewBssDescr->
-					     WscIeProbeRsp, pbIe,
+				     	WscIeProbeRsp, pbIe,
 					     pbIe[1] + 2);
 				pNewBssDescr->WscIeLen = pbIe[1] + 2;
 				break;
