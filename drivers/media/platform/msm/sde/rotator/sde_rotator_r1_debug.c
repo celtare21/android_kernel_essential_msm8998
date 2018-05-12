@@ -24,22 +24,23 @@
 #include "sde_rotator_r1.h"
 #include "sde_rotator_r1_internal.h"
 
-/*
- * sde_rotator_r1_create_debugfs - Setup rotator r1 debugfs directory structure.
- * @rot_dev: Pointer to rotator device
- */
-int sde_rotator_r1_create_debugfs(struct sde_rot_mgr *mgr,
-		struct dentry *debugfs_root)
-{
-	struct sde_rotator_r1_data *hw_data;
-
-	if (!mgr || !debugfs_root || !mgr->hw_data)
-		return -EINVAL;
-
-	hw_data = mgr->hw_data;
-
-	/* add debugfs */
-
-	return 0;
+#ifdef CONFIG_DEBUG_FS
+/*	
+ * sde_rotator_r1_create_debugfs - Setup rotator r1 debugfs directory structure.	
+ * @rot_dev: Pointer to rotator device	
+ */	
+	int sde_rotator_r1_create_debugfs(struct sde_rot_mgr *mgr,	
+		struct dentry *debugfs_root)	
+{	
+	struct sde_rotator_r1_data *hw_data;	
+	
+	if (!mgr || !debugfs_root || !mgr->hw_data)	
+		return -EINVAL;	
+	
+	hw_data = mgr->hw_data;	
+	
+	/* add debugfs */	
+	
+	return 0;	
 }
-
+#endif

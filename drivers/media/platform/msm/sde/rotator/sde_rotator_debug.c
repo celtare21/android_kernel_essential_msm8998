@@ -1287,105 +1287,107 @@ off_fail:
 	return -ENODEV;
 }
 
-/*
- * sde_rotator_create_debugfs - Setup rotator debugfs directory structure.
- * @rot_dev: Pointer to rotator device
- */
-struct dentry *sde_rotator_create_debugfs(
-		struct sde_rotator_device *rot_dev)
-{
-	struct dentry *debugfs_root;
-	char dirname[32] = {0};
-
-	snprintf(dirname, sizeof(dirname), "%s%d",
-			SDE_ROTATOR_DRV_NAME, rot_dev->dev->id);
-	debugfs_root = debugfs_create_dir(dirname, NULL);
-	if (!debugfs_root) {
-		SDEROT_ERR("fail create debugfs root\n");
-		return NULL;
-	}
-
-	if (!debugfs_create_file("stats", S_IRUGO | S_IWUSR,
-		debugfs_root, rot_dev, &sde_rotator_stat_ops)) {
-		SDEROT_ERR("fail create debugfs stats\n");
-		debugfs_remove_recursive(debugfs_root);
-		return NULL;
-	}
-
-	if (!debugfs_create_file("raw", S_IRUGO | S_IWUSR,
-		debugfs_root, rot_dev, &sde_rotator_raw_ops)) {
-		SDEROT_ERR("fail create debugfs raw\n");
-		debugfs_remove_recursive(debugfs_root);
-		return NULL;
-	}
-
-	if (!debugfs_create_u32("fence_timeout", S_IRUGO | S_IWUSR,
-			debugfs_root, &rot_dev->fence_timeout)) {
-		SDEROT_ERR("fail create fence_timeout\n");
-		debugfs_remove_recursive(debugfs_root);
-		return NULL;
-	}
-
-	if (!debugfs_create_u32("streamoff_timeout", S_IRUGO | S_IWUSR,
-			debugfs_root, &rot_dev->streamoff_timeout)) {
-		SDEROT_ERR("fail create streamoff_timeout\n");
-		debugfs_remove_recursive(debugfs_root);
-		return NULL;
-	}
-
-	if (!debugfs_create_u32("early_submit", S_IRUGO | S_IWUSR,
-			debugfs_root, &rot_dev->early_submit)) {
-		SDEROT_ERR("fail create early_submit\n");
-		debugfs_remove_recursive(debugfs_root);
-		return NULL;
-	}
-
-	if (sde_rotator_base_create_debugfs(rot_dev->mdata, debugfs_root)) {
-		SDEROT_ERR("fail create base debugfs\n");
-		debugfs_remove_recursive(debugfs_root);
-		return NULL;
-	}
-
-	if (sde_rotator_core_create_debugfs(rot_dev->mgr, debugfs_root)) {
-		SDEROT_ERR("fail create core debugfs\n");
-		debugfs_remove_recursive(debugfs_root);
-		return NULL;
-	}
-
-	if (sde_rotator_evtlog_create_debugfs(rot_dev->mgr, debugfs_root)) {
-		SDEROT_ERR("fail create evtlog debugfs\n");
-		debugfs_remove_recursive(debugfs_root);
-		return NULL;
-	}
-
-	if (sde_rotator_perf_create_debugfs(rot_dev, debugfs_root)) {
-		SDEROT_ERR("fail create perf debugfs\n");
-		debugfs_remove_recursive(debugfs_root);
-		return NULL;
-	}
-
-	if (sde_rotator_debug_register_base(rot_dev, debugfs_root,
-				"sde", &rot_dev->mdata->sde_io)) {
-		SDEROT_ERR("fail create debug register for sde rotator\n");
-		debugfs_remove_recursive(debugfs_root);
-		return NULL;
-	}
-
-	if (sde_rotator_debug_register_base(rot_dev, debugfs_root,
-				"vbif_nrt", &rot_dev->mdata->vbif_nrt_io)) {
-		SDEROT_ERR("fail create debug register for sderot vbif_nrt\n");
-		debugfs_remove_recursive(debugfs_root);
-		return NULL;
-	}
-
-	return debugfs_root;
+#ifdef CONFIG_DEBUG_FS
+/*	
+ * sde_rotator_create_debugfs - Setup rotator debugfs directory structure.	
+ * @rot_dev: Pointer to rotator device	
+ */	
+struct dentry *sde_rotator_create_debugfs(	
+		struct sde_rotator_device *rot_dev)	
+{	
+	struct dentry *debugfs_root;	
+	char dirname[32] = {0};	
+	
+	snprintf(dirname, sizeof(dirname), "%s%d",	
+			SDE_ROTATOR_DRV_NAME, rot_dev->dev->id);	
+	debugfs_root = debugfs_create_dir(dirname, NULL);	
+	if (!debugfs_root) {	
+		SDEROT_ERR("fail create debugfs root\n");	
+		return NULL;	
+	}	
+	
+	if (!debugfs_create_file("stats", S_IRUGO | S_IWUSR,	
+		debugfs_root, rot_dev, &sde_rotator_stat_ops)) {	
+		SDEROT_ERR("fail create debugfs stats\n");	
+		debugfs_remove_recursive(debugfs_root);	
+		return NULL;	
+	}	
+	
+	if (!debugfs_create_file("raw", S_IRUGO | S_IWUSR,	
+		debugfs_root, rot_dev, &sde_rotator_raw_ops)) {	
+		SDEROT_ERR("fail create debugfs raw\n");	
+		debugfs_remove_recursive(debugfs_root);	
+		return NULL;	
+	}	
+	
+	if (!debugfs_create_u32("fence_timeout", S_IRUGO | S_IWUSR,	
+			debugfs_root, &rot_dev->fence_timeout)) {	
+		SDEROT_ERR("fail create fence_timeout\n");	
+		debugfs_remove_recursive(debugfs_root);	
+		return NULL;	
+	}	
+	
+	if (!debugfs_create_u32("streamoff_timeout", S_IRUGO | S_IWUSR,	
+			debugfs_root, &rot_dev->streamoff_timeout)) {	
+		SDEROT_ERR("fail create streamoff_timeout\n");	
+		debugfs_remove_recursive(debugfs_root);	
+		return NULL;	
+	}	
+	
+	if (!debugfs_create_u32("early_submit", S_IRUGO | S_IWUSR,	
+			debugfs_root, &rot_dev->early_submit)) {	
+		SDEROT_ERR("fail create early_submit\n");	
+		debugfs_remove_recursive(debugfs_root);	
+		return NULL;	
+	}	
+	
+	if (sde_rotator_base_create_debugfs(rot_dev->mdata, debugfs_root)) {	
+		SDEROT_ERR("fail create base debugfs\n");	
+		debugfs_remove_recursive(debugfs_root);	
+		return NULL;	
+	}	
+	
+	if (sde_rotator_core_create_debugfs(rot_dev->mgr, debugfs_root)) {	
+		SDEROT_ERR("fail create core debugfs\n");	
+		debugfs_remove_recursive(debugfs_root);	
+		return NULL;	
+	}	
+	
+	if (sde_rotator_evtlog_create_debugfs(rot_dev->mgr, debugfs_root)) {	
+		SDEROT_ERR("fail create evtlog debugfs\n");	
+		debugfs_remove_recursive(debugfs_root);	
+		return NULL;	
+	}	
+	
+	if (sde_rotator_perf_create_debugfs(rot_dev, debugfs_root)) {	
+		SDEROT_ERR("fail create perf debugfs\n");	
+		debugfs_remove_recursive(debugfs_root);	
+		return NULL;	
+	}	
+	
+	if (sde_rotator_debug_register_base(rot_dev, debugfs_root,	
+				"sde", &rot_dev->mdata->sde_io)) {	
+		SDEROT_ERR("fail create debug register for sde rotator\n");	
+		debugfs_remove_recursive(debugfs_root);	
+		return NULL;	
+	}	
+	
+	if (sde_rotator_debug_register_base(rot_dev, debugfs_root,	
+				"vbif_nrt", &rot_dev->mdata->vbif_nrt_io)) {	
+		SDEROT_ERR("fail create debug register for sderot vbif_nrt\n");	
+		debugfs_remove_recursive(debugfs_root);	
+		return NULL;	
+	}	
+	
+	return debugfs_root;	
+}	
+	
+/*	
+ * sde_rotator_destroy_debugfs - Destroy rotator debugfs directory structure.	
+ * @rot_dev: Pointer to rotator debugfs	
+ */	
+void sde_rotator_destroy_debugfs(struct dentry *debugfs)	
+{	
+	debugfs_remove_recursive(debugfs);	
 }
-
-/*
- * sde_rotator_destroy_debugfs - Destroy rotator debugfs directory structure.
- * @rot_dev: Pointer to rotator debugfs
- */
-void sde_rotator_destroy_debugfs(struct dentry *debugfs)
-{
-	debugfs_remove_recursive(debugfs);
-}
+#endif
