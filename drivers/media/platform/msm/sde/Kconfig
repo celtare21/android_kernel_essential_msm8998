@@ -27,7 +27,3 @@ config MSM_SDE_HDMI_CEC
 	  which allows various audiovisual products to communicate using HDMI
 	  CEC links. CEC is a protocol defined in HDMI spec which consists of
 	  both low-level and high-level protocol definition.
-
-config SDE_ROTATOR_DEBUG_FS
-	bool "DebugFS hack"
-	default y

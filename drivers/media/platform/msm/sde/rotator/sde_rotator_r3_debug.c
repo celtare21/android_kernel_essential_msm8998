@@ -24,27 +24,25 @@
 #include "sde_rotator_r3.h"
 #include "sde_rotator_r3_internal.h"
 
-#ifdef CONFIG_DEBUG_FS
-/*	
- * sde_rotator_r3_create_debugfs - Setup rotator r3 debugfs directory structure.	
- * @rot_dev: Pointer to rotator device	
- */	
-int sde_rotator_r3_create_debugfs(struct sde_rot_mgr *mgr,	
-		struct dentry *debugfs_root)	
-{	
-	struct sde_hw_rotator *hw_data;	
-	
-	if (!mgr || !debugfs_root || !mgr->hw_data)	
-		return -EINVAL;	
+/*
+ * sde_rotator_r3_create_debugfs - Setup rotator r3 debugfs directory structure.
+ * @rot_dev: Pointer to rotator device
+ */
+int sde_rotator_r3_create_debugfs(struct sde_rot_mgr *mgr,
+		struct dentry *debugfs_root)
+{
+	struct sde_hw_rotator *hw_data;
 
-	hw_data = mgr->hw_data;	
-	
-	if (!debugfs_create_bool("dbgmem", S_IRUGO | S_IWUSR,	
-			debugfs_root, &hw_data->dbgmem)) {	
-		SDEROT_ERR("fail create dbgmem\n");	
-		return -EINVAL;	
-	}	
-	
-	return 0;	
+	if (!mgr || !debugfs_root || !mgr->hw_data)
+		return -EINVAL;
+
+	hw_data = mgr->hw_data;
+
+	if (!debugfs_create_bool("dbgmem", S_IRUGO | S_IWUSR,
+			debugfs_root, &hw_data->dbgmem)) {
+		SDEROT_ERR("fail create dbgmem\n");
+		return -EINVAL;
+	}
+
+	return 0;
 }
-#endif
