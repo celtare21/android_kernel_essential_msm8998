@@ -85,7 +85,7 @@
 #define MDP_TIME_PERIOD_CALC_FPS_US	1000000
 
 short backlight_min = 0;
-module_param(backlight_min, short, 0755);
+module_param(backlight_min, short, 0644);
 
 #define MDSS_BRIGHT_TO_BL_DIM(out, v) do {\
 			out = ((v) * (v) * 255  / 4095 + (v) * (255 - (v)) / 32);\
