@@ -5994,7 +5994,7 @@ static sme_QosEdcaAcType sme_qos_up_to_ac(sme_QosWmmUpType up)
 {
 	sme_QosEdcaAcType ac = SME_QOS_EDCA_AC_MAX;
 
-	if (up >= 0 && up < SME_QOS_WMM_UP_MAX)
+	if (up < SME_QOS_WMM_UP_MAX)
 		ac = sme_qos_u_pto_ac_map[up];
 
 	QDF_TRACE(QDF_MODULE_ID_SME, QDF_TRACE_LEVEL_DEBUG,

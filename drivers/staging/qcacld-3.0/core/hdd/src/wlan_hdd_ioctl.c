@@ -4600,8 +4600,7 @@ static int drv_cmd_set_okc_mode(hdd_adapter_t *adapter,
 		goto exit;
 	}
 
-	if ((okc_mode < 0) ||
-	    (okc_mode > 1)) {
+	if (okc_mode > 1) {
 		hdd_err("Okc mode value %d is out of range (Min: 0 Max: 1)",
 			  okc_mode);
 		ret = -EINVAL;

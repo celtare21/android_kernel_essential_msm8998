@@ -707,7 +707,7 @@ void ipa_uc_register_handlers(enum ipa_hw_features feature,
 			      struct ipa_uc_hdlrs *hdlrs)
 {
 
-	if (0 > feature || IPA_HW_FEATURE_MAX <= feature) {
+	if (IPA_HW_FEATURE_MAX <= feature) {
 		IPAERR("Feature %u is invalid, not registering hdlrs\n",
 		       feature);
 		return;

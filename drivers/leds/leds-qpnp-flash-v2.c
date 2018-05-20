@@ -1847,7 +1847,7 @@ static int qpnp_flash_led_parse_common_dt(struct qpnp_flash_led *led,
 	led->pdata->thermal_derate_slow = -EINVAL;
 	rc = of_property_read_u32(node, "qcom,thermal-derate-slow", &val);
 	if (!rc) {
-		if (val < 0 || val > THERMAL_DERATE_SLOW_MAX) {
+		if (val > THERMAL_DERATE_SLOW_MAX) {
 			pr_err("Invalid thermal_derate_slow %d\n", val);
 			return -EINVAL;
 		}
@@ -1863,7 +1863,7 @@ static int qpnp_flash_led_parse_common_dt(struct qpnp_flash_led *led,
 	led->pdata->thermal_derate_fast = -EINVAL;
 	rc = of_property_read_u32(node, "qcom,thermal-derate-fast", &val);
 	if (!rc) {
-		if (val < 0 || val > THERMAL_DERATE_FAST_MAX) {
+		if (val > THERMAL_DERATE_FAST_MAX) {
 			pr_err("Invalid thermal_derate_fast %d\n", val);
 			return -EINVAL;
 		}
@@ -1879,12 +1879,12 @@ static int qpnp_flash_led_parse_common_dt(struct qpnp_flash_led *led,
 	led->pdata->thermal_debounce = -EINVAL;
 	rc = of_property_read_u32(node, "qcom,thermal-debounce", &val);
 	if (!rc) {
-		if (val < 0 || val > THERMAL_DEBOUNCE_TIME_MAX) {
+		if (val > THERMAL_DEBOUNCE_TIME_MAX) {
 			pr_err("Invalid thermal_debounce %d\n", val);
 			return -EINVAL;
 		}
 
-		if (val >= 0 && val < 16)
+		if (val < 16)
 			led->pdata->thermal_debounce = 0;
 		else
 			led->pdata->thermal_debounce = ilog2(val) - 3;
@@ -1901,7 +1901,7 @@ static int qpnp_flash_led_parse_common_dt(struct qpnp_flash_led *led,
 		else
 			val = THERMAL_HYST_TEMP_TO_VAL(val, 15);
 
-		if (val < 0 || val > THERMAL_DERATE_HYSTERESIS_MAX) {
+		if (val > THERMAL_DERATE_HYSTERESIS_MAX) {
 			pr_err("Invalid thermal_derate_hysteresis %d\n", val);
 			return -EINVAL;
 		}

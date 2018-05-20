@@ -131,14 +131,9 @@ static int cpp_get_clk_freq_tbl_dt(struct cpp_device *cpp_dev)
 
 	for (i = 0; i < count; i++) {
 		pr_debug("entry=%d\n", rates[i]);
-		if (rates[i] >= 0) {
-			if (rates[i] >= min_clk_rate) {
-				hw_info->freq_tbl[idx++] = rates[i];
-				pr_debug("tbl[%d]=%d\n", idx-1, rates[i]);
-			}
-		} else {
-			pr_debug("rate is invalid entry/end %d\n", rates[i]);
-			break;
+		if (rates[i] >= min_clk_rate) {
+			hw_info->freq_tbl[idx++] = rates[i];
+			pr_debug("tbl[%d]=%d\n", idx-1, rates[i]);
 		}
 	}
 
@@ -192,11 +187,6 @@ int msm_update_freq_tbl(struct cpp_device *cpp_dev)
 	int rc = 0;
 
 	msm_cpp_core_clk_idx = msm_cpp_get_clock_index(cpp_dev, "cpp_core_clk");
-	if (msm_cpp_core_clk_idx < 0)  {
-		pr_err("%s: fail to get clock index\n", __func__);
-		rc = msm_cpp_core_clk_idx;
-		return rc;
-	}
 	rc = cpp_get_clk_freq_tbl_dt(cpp_dev);
 	if (rc < 0)  {
 		pr_err("%s: fail to get frequency table\n", __func__);

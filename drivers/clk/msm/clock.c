@@ -1247,11 +1247,6 @@ static void populate_clock_opp_table(struct device_node *np,
 			 */
 			if (clk->ops->list_rate) {
 				ret = clk_round_rate(clk, rate + 1);
-				if (ret < 0) {
-					pr_err("clk_round_rate failed for %s\n",
-							clk->dbg_name);
-					goto err_round_rate;
-				}
 				/*
 				 * If clk_round_rate give the same value on
 				 * consecutive iterations, exit loop since
@@ -1280,7 +1275,7 @@ static void populate_clock_opp_table(struct device_node *np,
 		}
 err_round_rate:
 		/* If OPP table population was successful, set the flag */
-		if (uv >= 0 && ret >= 0)
+		if (uv >= 0)
 			clk->opp_table_populated = true;
 		kfree(device_list);
 	}

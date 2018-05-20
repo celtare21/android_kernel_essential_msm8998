@@ -689,7 +689,7 @@ uint8_t lim_is_sme_scan_req_valid(tpAniSirGlobal pMac, tpSirSmeScanReq pScanReq)
 			goto end;
 		}
 	}
-	if ((pScanReq->bssType < 0) || (pScanReq->bssType > eSIR_AUTO_MODE)) {
+	if (pScanReq->bssType > eSIR_AUTO_MODE) {
 		pe_err("Invalid BSS Type");
 		valid = false;
 	}

@@ -369,40 +369,20 @@ static const struct file_operations cxd224x_dev_fops = {
 static int cxd224x_parse_dt(struct device *dev,
                             struct cxd224x_platform_data *pdata)
 {
-        int ret=0;
-
         /*nfc_int*/
 	pdata->irq_gpio =  of_get_named_gpio_flags(dev->of_node, "sony,nfc_int", 0,NULL);
-	if (pdata->irq_gpio < 0) {
-		pr_err( "failed to get \"nfc_int\"\n");
-		goto dt_err;
-	}
 
 #if defined(CONFIG_NFC_CXD224X_VEN) || defined(CONFIG_NFC_CXD224X_VEN_MODULE)
         pdata->en_gpio = of_get_named_gpio_flags(dev->of_node, "sony,nfc_ven", 0,NULL);
-	if (pdata->en_gpio< 0) {
-		pr_err( "failed to get \"nfc_ven\"\n");
-		goto dt_err;
-	}
 #endif
 
 #if defined(CONFIG_NFC_CXD224X_RST) || defined(CONFIG_NFC_CXD224X_RST_MODULE)
 	pdata->rst_gpio = of_get_named_gpio_flags(dev->of_node, "sony,nfc_rst", 0,NULL);
-	if (pdata->rst_gpio< 0) {
-		pr_err( "failed to get \"nfc_rst\"\n");
-		goto dt_err;
-	}
 #endif
 
 	pdata->wake_gpio = of_get_named_gpio_flags(dev->of_node, "sony,nfc_wake", 0,NULL);
-	if (pdata->wake_gpio< 0) {
-		pr_err( "failed to get \"nfc_wake\"\n");
-		goto dt_err;
-	}
         return 0;
 
-dt_err:
-        return ret;        
 }
 #endif
 

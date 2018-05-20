@@ -92,14 +92,12 @@ static int bt_vreg_enable(struct bt_power_vreg_data *vreg)
 			}
 		}
 
-		if (vreg->load_uA >= 0) {
-			rc = regulator_set_load(vreg->reg,
-					vreg->load_uA);
-			if (rc < 0) {
-				BT_PWR_ERR("vreg_set_mode(%s) failed rc=%d\n",
-						vreg->name, rc);
-				goto out;
-			}
+		rc = regulator_set_load(vreg->reg,
+				vreg->load_uA);
+		if (rc < 0) {
+			BT_PWR_ERR("vreg_set_mode(%s) failed rc=%d\n",
+					vreg->name, rc);
+			goto out;
 		}
 
 		rc = regulator_enable(vreg->reg);
@@ -142,12 +140,10 @@ static int bt_vreg_disable(struct bt_power_vreg_data *vreg)
 				goto out;
 			}
 		}
-		if (vreg->load_uA >= 0) {
-			rc = regulator_set_load(vreg->reg, 0);
-			if (rc < 0) {
-				BT_PWR_ERR("vreg_set_mode(%s) failed rc=%d\n",
-						vreg->name, rc);
-			}
+		rc = regulator_set_load(vreg->reg, 0);
+		if (rc < 0) {
+			BT_PWR_ERR("vreg_set_mode(%s) failed rc=%d\n",
+					vreg->name, rc);
 		}
 	}
 out:

@@ -468,8 +468,6 @@ static int msm_lmh_dcvs_probe(struct platform_device *pdev)
 	 * before the low threshold
 	 */
 	id = sensor_get_id(hw->sensor_name);
-	if (id < 0)
-		return id;
 
 	ret = sensor_set_trip(id, &hw->default_hi);
 	if (!ret) {

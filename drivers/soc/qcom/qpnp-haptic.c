@@ -2199,7 +2199,7 @@ static int qpnp_hap_auto_mode_config(struct qpnp_hap *hap, int time_ms)
 			return rc;
 
 		/* enable play_irq for buffer mode */
-		if (hap->play_irq >= 0 && !hap->play_irq_en) {
+		if (!hap->play_irq_en) {
 			enable_irq(hap->play_irq);
 			hap->play_irq_en = true;
 		}
@@ -2235,7 +2235,7 @@ static int qpnp_hap_auto_mode_config(struct qpnp_hap *hap, int time_ms)
 			return rc;
 
 		/* enable play_irq for direct mode */
-		if (hap->play_irq >= 0 && hap->play_irq_en) {
+		if (hap->play_irq_en) {
 			disable_irq(hap->play_irq);
 			hap->play_irq_en = false;
 		}
@@ -2682,33 +2682,28 @@ static int qpnp_hap_config(struct qpnp_hap *hap)
 		return rc;
 
 	/* setup play irq */
-	if (hap->play_irq >= 0) {
-		rc = devm_request_threaded_irq(&hap->pdev->dev, hap->play_irq,
-			NULL, qpnp_hap_play_irq, IRQF_ONESHOT, "qpnp_hap_play",
-			hap);
-		if (rc < 0) {
-			pr_err("Unable to request play(%d) IRQ(err:%d)\n",
-				hap->play_irq, rc);
-			return rc;
-		}
-
+	rc = devm_request_threaded_irq(&hap->pdev->dev, hap->play_irq,
+		NULL, qpnp_hap_play_irq, IRQF_ONESHOT, "qpnp_hap_play",
+		hap);
+	if (rc < 0) {
+		pr_err("Unable to request play(%d) IRQ(err:%d)\n",
+			hap->play_irq, rc);
+		return rc;
+	}
 		/* use play_irq only for buffer mode */
-		if (hap->play_mode != QPNP_HAP_BUFFER) {
-			disable_irq(hap->play_irq);
-			hap->play_irq_en = false;
-		}
+	if (hap->play_mode != QPNP_HAP_BUFFER) {
+		disable_irq(hap->play_irq);
+		hap->play_irq_en = false;
 	}
 
 	/* setup short circuit irq */
-	if (hap->sc_irq >= 0) {
-		rc = devm_request_threaded_irq(&hap->pdev->dev, hap->sc_irq,
-			NULL, qpnp_hap_sc_irq, IRQF_ONESHOT, "qpnp_hap_sc",
-			hap);
-		if (rc < 0) {
-			pr_err("Unable to request sc(%d) IRQ(err:%d)\n",
-				hap->sc_irq, rc);
-			return rc;
-		}
+	rc = devm_request_threaded_irq(&hap->pdev->dev, hap->sc_irq,
+		NULL, qpnp_hap_sc_irq, IRQF_ONESHOT, "qpnp_hap_sc",
+		hap);
+	if (rc < 0) {
+		pr_err("Unable to request sc(%d) IRQ(err:%d)\n",
+			hap->sc_irq, rc);
+		return rc;
 	}
 
 	hap->sc_count = 0;
@@ -3018,14 +3013,6 @@ static int qpnp_hap_parse_dt(struct qpnp_hap *hap)
 	}
 
 	hap->play_irq = platform_get_irq_byname(hap->pdev, "play-irq");
-	if (hap->play_irq < 0)
-		pr_warn("Unable to get play irq\n");
-
-	hap->sc_irq = platform_get_irq_byname(hap->pdev, "sc-irq");
-	if (hap->sc_irq < 0) {
-		pr_err("Unable to get sc irq\n");
-		return hap->sc_irq;
-	}
 
 	if (of_find_property(pdev->dev.of_node, "vcc_pon-supply", NULL))
 		hap->manage_pon_supply = true;

@@ -1255,7 +1255,7 @@ int ipahal_reg_init(enum ipa_hw_type ipa_hw_type)
 
 	IPAHAL_DBG_LOW("Entry - HW_TYPE=%d\n", ipa_hw_type);
 
-	if ((ipa_hw_type < 0) || (ipa_hw_type >= IPA_HW_MAX)) {
+	if (ipa_hw_type >= IPA_HW_MAX) {
 		IPAHAL_ERR("invalid IPA HW type (%d)\n", ipa_hw_type);
 		return -EINVAL;
 	}
@@ -1304,7 +1304,7 @@ int ipahal_reg_init(enum ipa_hw_type ipa_hw_type)
  */
 const char *ipahal_reg_name_str(enum ipahal_reg_name reg_name)
 {
-	if (reg_name < 0 || reg_name >= IPA_REG_MAX) {
+	if (reg_name >= IPA_REG_MAX) {
 		IPAHAL_ERR("requested name of invalid reg=%d\n", reg_name);
 		return "Invalid Register";
 	}

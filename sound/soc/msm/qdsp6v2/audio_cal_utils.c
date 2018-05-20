@@ -920,7 +920,7 @@ int cal_utils_set_cal(size_t data_size, void *data,
 	}
 
 	if ((data_size > get_user_cal_type_size(
-		cal_type->info.reg.cal_type)) || (data_size < 0)) {
+		cal_type->info.reg.cal_type))) {
 		pr_err("%s: cal_type %d, data_size of %zd is invalid, expecting %zd!\n",
 			__func__, cal_type->info.reg.cal_type, data_size,
 			get_user_cal_type_size(cal_type->info.reg.cal_type));

@@ -1225,10 +1225,6 @@ uint32_t lim_create_fils_auth_data(tpAniSirGlobal mac_ctx,
 		/* Calculate data/length for FILS Wrapped Data */
 		wrapped_data_len =
 			lim_create_fils_wrapper_data(session->fils_info);
-		if (wrapped_data_len < 0) {
-			pe_err("failed to create warpped data");
-			return 0;
-		}
 		frame_len += wrapped_data_len + EXTENDED_IE_HEADER_LEN;
 	}
 	return frame_len;

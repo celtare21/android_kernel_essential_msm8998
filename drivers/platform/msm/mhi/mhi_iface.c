@@ -64,8 +64,7 @@ static void mhi_msm_fixup(struct pci_dev *pcie_device)
 
 int mhi_ctxt_init(struct mhi_device_ctxt *mhi_dev_ctxt)
 {
-	int ret_val = 0;
-	u32 j = 0;
+	int ret_val = 0, j = 0;
 
 	ret_val = mhi_init_device_ctxt(mhi_dev_ctxt);
 	if (ret_val) {
@@ -119,7 +118,7 @@ irq_error:
 		   mhi_dev_ctxt->dev_space.dma_dev_mem_start);
 
 	kfree(mhi_dev_ctxt->ev_ring_props);
-	for (j = j - 1; j >= 0; --j)
+	for (--j; j >= 0; --j)
 		free_irq(mhi_dev_ctxt->core.irq_base + j, NULL);
 
 	return -EINVAL;

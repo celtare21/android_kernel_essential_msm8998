@@ -4366,11 +4366,6 @@ int mdss_mdp_argc_config(struct msm_fb_data_type *mfd,
 	disp_num = PP_BLOCK(config->block) - MDP_LOGICAL_BLOCK_DISP_0;
 	ctl = mfd_to_ctl(mfd);
 	num = (ctl && ctl->mixer_left) ? ctl->mixer_left->num : -1;
-	if (num < 0) {
-		pr_err("invalid mfd index %d config\n",
-				mfd->index);
-		return -EPERM;
-	}
 	switch (PP_LOCAT(config->block)) {
 	case MDSS_PP_LM_CFG:
 		/*
@@ -6697,12 +6692,6 @@ static int pp_ad_attenuate_bl(struct mdss_ad_info *ad, u32 bl, u32 *bl_out)
 	u32 shift = 0, ratio_temp = 0;
 	u32 n, lut_interval, bl_att;
 
-	if (bl < 0 || ad->init.alpha < 0) {
-		pr_err("Invalid input: backlight = %d, alpha = %d\n", bl,
-			ad->init.alpha);
-		return -EINVAL;
-	}
-
 	if (ad->init.alpha == 0) {
 		pr_debug("alpha = %d, hence no attenuation needed\n",
 			ad->init.alpha);
@@ -6752,7 +6741,7 @@ static int pp_ad_linearize_bl(struct mdss_ad_info *ad, u32 bl, u32 *bl_out,
 	uint32_t *bl_lut = NULL;
 	int ret = -EINVAL;
 
-	if (bl < 0 || bl > ad->bl_mfd->panel_info->bl_max) {
+	if (bl > ad->bl_mfd->panel_info->bl_max) {
 		pr_err("Invalid backlight input: bl = %d, bl_max = %d\n", bl,
 			ad->bl_mfd->panel_info->bl_max);
 		return -EINVAL;

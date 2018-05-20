@@ -5797,10 +5797,6 @@ static int __iw_set_essid(struct net_device *dev,
 	pRoamProfile = &pWextState->roamProfile;
 	/*Try disconnecting if already in connected state*/
 	status = wlan_hdd_try_disconnect(pAdapter);
-	if (0 > status) {
-	    hdd_err("Failed to disconnect the existing connection");
-	    return -EALREADY;
-	}
 
 	/*
 	 * when cfg80211 defined, wpa_supplicant wext driver uses

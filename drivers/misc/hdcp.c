@@ -835,7 +835,7 @@ static int hdcp_lib_enable_encryption(struct hdcp_lib_handle *handle)
 				  QSEECOM_ALIGN(sizeof
 						(struct hdcp_set_hw_key_rsp)));
 
-	if ((rc < 0) || (rsp_buf->status < 0)) {
+	if (rc < 0) {
 		pr_err("qseecom cmd failed with err = %d status = %d\n",
 		       rc, rsp_buf->status);
 		rc = -EINVAL;
@@ -1284,8 +1284,7 @@ static int hdcp_lib_session_deinit(struct hdcp_lib_handle *handle)
 						(struct
 						 hdcp_lib_session_deinit_rsp)));
 
-	if ((rc < 0) || (rsp_buf->status < 0) ||
-	    (rsp_buf->commandid != HDCP_SESSION_DEINIT)) {
+	if ((rc < 0) || (rsp_buf->commandid != HDCP_SESSION_DEINIT)) {
 		pr_err("qseecom cmd failed with err = %d status = %d\n",
 		       rc, rsp_buf->status);
 		rc = -EINVAL;
@@ -1457,8 +1456,7 @@ static int hdcp_lib_txmtr_deinit(struct hdcp_lib_handle *handle)
 				  QSEECOM_ALIGN(sizeof
 						(struct hdcp_deinit_rsp)));
 
-	if ((rc < 0) || (rsp_buf->status < 0) ||
-	    (rsp_buf->commandid != HDCP_TXMTR_DEINIT)) {
+	if ((rc < 0) || (rsp_buf->commandid != HDCP_TXMTR_DEINIT)) {
 		pr_err("qseecom cmd failed with err = %d status = %d\n",
 		       rc, rsp_buf->status);
 		rc = -EINVAL;
@@ -1578,7 +1576,7 @@ static void hdcp_lib_stream(struct hdcp_lib_handle *handle)
 						(struct
 						 hdcp_query_stream_type_rsp)));
 
-	if ((rc < 0) || (rsp_buf->status < 0) || (rsp_buf->msglen <= 0) ||
+	if ((rc < 0) || (rsp_buf->msglen <= 0) ||
 	    (rsp_buf->commandid != HDCP_TXMTR_QUERY_STREAM_TYPE)) {
 		pr_err("qseecom cmd failed with err=%d status=%d\n",
 		       rc, rsp_buf->status);

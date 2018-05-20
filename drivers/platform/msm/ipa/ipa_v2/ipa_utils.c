@@ -430,8 +430,7 @@ int ipa_get_clients_from_rm_resource(
 {
 	int i = 0;
 
-	if (resource < 0 ||
-	    resource >= IPA_RM_RESOURCE_MAX ||
+	if (resource >= IPA_RM_RESOURCE_MAX ||
 	    !clients) {
 		IPAERR("Bad parameters\n");
 		return -EINVAL;
@@ -917,7 +916,7 @@ int ipa2_get_ep_mapping(enum ipa_client_type client)
 		return INVALID_EP_MAPPING_INDEX;
 	}
 
-	if (client >= IPA_CLIENT_MAX || client < 0) {
+	if (client >= IPA_CLIENT_MAX) {
 		IPAERR_RL("Bad client number! client =%d\n", client);
 		return INVALID_EP_MAPPING_INDEX;
 	}
@@ -4825,7 +4824,7 @@ bool ipa2_is_client_handle_valid(u32 clnt_hdl)
 		return false;
 	}
 
-	if (clnt_hdl >= 0 && clnt_hdl < ipa_ctx->ipa_num_pipes)
+	if (clnt_hdl < ipa_ctx->ipa_num_pipes)
 		return true;
 	return false;
 }

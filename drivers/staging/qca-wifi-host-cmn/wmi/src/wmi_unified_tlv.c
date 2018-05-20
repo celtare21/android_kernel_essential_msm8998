@@ -13875,11 +13875,6 @@ wmi_fill_oui_extensions_buffer(struct wmi_action_oui_extension *extension,
 	uint8_t i;
 
 	for (i = 0; i < (uint8_t)no_oui_extns; i++) {
-		if ((rem_var_buf_len - cmd_ext->buf_data_length) < 0) {
-			WMI_LOGE(FL("Invalid action oui command length"));
-			return QDF_STATUS_E_INVAL;
-		}
-
 		var_buf[0] = i;
 		var_buf++;
 

@@ -487,8 +487,7 @@ int ipa3_get_clients_from_rm_resource(
 {
 	int i = 0;
 
-	if (resource < 0 ||
-	    resource >= IPA_RM_RESOURCE_MAX ||
+	if (resource >= IPA_RM_RESOURCE_MAX ||
 	    !clients) {
 		IPAERR("Bad parameters\n");
 		return -EINVAL;
@@ -949,7 +948,7 @@ int ipa3_get_ep_mapping(enum ipa_client_type client)
 {
 	int ipa_ep_idx;
 
-	if (client >= IPA_CLIENT_MAX || client < 0) {
+	if (client >= IPA_CLIENT_MAX) {
 		IPAERR_RL("Bad client number! client =%d\n", client);
 		return IPA_EP_NOT_ALLOCATED;
 	}
@@ -991,7 +990,7 @@ struct ipa_gsi_ep_config *ipa3_get_gsi_ep_info(int ipa_ep_idx)
  */
 int ipa_get_ep_group(enum ipa_client_type client)
 {
-	if (client >= IPA_CLIENT_MAX || client < 0) {
+	if (client >= IPA_CLIENT_MAX) {
 		IPAERR("Bad client number! client =%d\n", client);
 		return -EINVAL;
 	}
@@ -1007,7 +1006,7 @@ int ipa_get_ep_group(enum ipa_client_type client)
  */
 u8 ipa3_get_qmb_master_sel(enum ipa_client_type client)
 {
-	if (client >= IPA_CLIENT_MAX || client < 0) {
+	if (client >= IPA_CLIENT_MAX) {
 		IPAERR("Bad client number! client =%d\n", client);
 		return -EINVAL;
 	}
@@ -2971,7 +2970,7 @@ bool ipa3_is_ready(void)
  */
 bool ipa3_is_client_handle_valid(u32 clnt_hdl)
 {
-	if (clnt_hdl >= 0 && clnt_hdl < ipa3_ctx->ipa_num_pipes)
+	if (clnt_hdl < ipa3_ctx->ipa_num_pipes)
 		return true;
 	return false;
 }

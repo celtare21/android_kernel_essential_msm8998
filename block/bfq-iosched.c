@@ -2891,7 +2891,7 @@ static bool bfq_bfqq_is_slow(struct bfq_data *bfqd, struct bfq_queue *bfqq,
 	delta_usecs = ktime_to_us(delta_ktime);
 
 	/* don't trust short/unrealistic values. */
-	if (delta_usecs < 1000 || delta_usecs >= LONG_MAX) {
+	if (delta_usecs < 1000) {
 		if (blk_queue_nonrot(bfqd->queue))
 			 /*
 			  * give same worst-case guarantees as idling

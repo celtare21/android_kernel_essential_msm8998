@@ -1661,8 +1661,7 @@ static int fastrpc_internal_invoke(struct fastrpc_file *fl, uint32_t mode,
 	if (fl->profile && !interrupted) {
 		if (invoke->handle != FASTRPC_STATIC_HANDLE_LISTENER)
 			fl->perf.invoke += getnstimediff(&invoket);
-		if (!(invoke->handle >= 0 &&
-			invoke->handle <= FASTRPC_STATIC_HANDLE_MAX))
+		if (!(invoke->handle <= FASTRPC_STATIC_HANDLE_MAX))
 			fl->perf.count++;
 	}
 	return err;

@@ -535,7 +535,7 @@ static int ipahal_imm_cmd_init(enum ipa_hw_type ipa_hw_type)
 
 	IPAHAL_DBG_LOW("Entry - HW_TYPE=%d\n", ipa_hw_type);
 
-	if ((ipa_hw_type < 0) || (ipa_hw_type >= IPA_HW_MAX)) {
+	if (ipa_hw_type >= IPA_HW_MAX) {
 		IPAHAL_ERR("invalid IPA HW type (%d)\n", ipa_hw_type);
 		return -EINVAL;
 	}
@@ -578,7 +578,7 @@ static int ipahal_imm_cmd_init(enum ipa_hw_type ipa_hw_type)
  */
 const char *ipahal_imm_cmd_name_str(enum ipahal_imm_cmd_name cmd_name)
 {
-	if (cmd_name < 0 || cmd_name >= IPA_IMM_CMD_MAX) {
+	if (cmd_name >= IPA_IMM_CMD_MAX) {
 		IPAHAL_ERR("requested name of invalid imm_cmd=%d\n", cmd_name);
 		return "Invalid IMM_CMD";
 	}
@@ -906,7 +906,7 @@ static int ipahal_pkt_status_init(enum ipa_hw_type ipa_hw_type)
 
 	IPAHAL_DBG_LOW("Entry - HW_TYPE=%d\n", ipa_hw_type);
 
-	if ((ipa_hw_type < 0) || (ipa_hw_type >= IPA_HW_MAX)) {
+	if (ipa_hw_type >= IPA_HW_MAX) {
 		IPAHAL_ERR("invalid IPA HW type (%d)\n", ipa_hw_type);
 		return -EINVAL;
 	}
@@ -987,7 +987,7 @@ void ipahal_pkt_status_parse(const void *unparsed_status,
 const char *ipahal_pkt_status_exception_str(
 	enum ipahal_pkt_status_exception exception)
 {
-	if (exception < 0 || exception >= IPAHAL_PKT_STATUS_EXCEPTION_MAX) {
+	if (exception >= IPAHAL_PKT_STATUS_EXCEPTION_MAX) {
 		IPAHAL_ERR(
 			"requested string of invalid pkt_status exception=%d\n",
 			exception);

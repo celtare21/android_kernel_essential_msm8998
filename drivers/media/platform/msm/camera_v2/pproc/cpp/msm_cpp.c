@@ -3482,11 +3482,6 @@ STREAM_BUFF_END:
 		if (clock_settings.clock_rate > 0) {
 			msm_cpp_core_clk_idx = msm_cpp_get_clock_index(cpp_dev,
 				"cpp_core_clk");
-			if (msm_cpp_core_clk_idx < 0) {
-				pr_err(" Fail to get clock index\n");
-				mutex_unlock(&cpp_dev->mutex);
-				return -EINVAL;
-			}
 			rc = msm_cpp_update_bandwidth_setting(cpp_dev,
 					clock_settings.avg,
 					clock_settings.inst);
@@ -4415,10 +4410,6 @@ static  int msm_cpp_update_gdscr_status(struct cpp_device *cpp_dev,
 		goto end;
 	}
 	msm_cpp_reg_idx = msm_cpp_get_regulator_index(cpp_dev, "vdd");
-	if (msm_cpp_reg_idx < 0) {
-		pr_err(" Fail to regulator index\n");
-		return -EINVAL;
-	}
 	rc = msm_camera_regulator_set_mode(cpp_dev->cpp_vdd +
 		msm_cpp_reg_idx, 1, status);
 	if (rc < 0)

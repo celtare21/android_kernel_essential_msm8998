@@ -1831,11 +1831,6 @@ static int cpr3_regulator_config_kryo_ldo_mem_acc(struct cpr3_regulator *vreg,
 		return 0;
 
 	apm_mode = msm_apm_get_supply(ctrl->apm);
-	if (apm_mode < 0) {
-		cpr3_err(ctrl, "APM get supply failed, rc=%d\n",
-			 apm_mode);
-		return apm_mode;
-	}
 
 	last_volt = regulator_get_voltage(ldo_reg);
 	if (last_volt < 0) {
@@ -1990,10 +1985,6 @@ static int cpr3_regulator_ldo_apm_prepare(struct cpr3_controller *ctrl,
 	int i, j, safe_volt, max_volt, ldo_volt, ref_volt, rc;
 
 	apm_mode = msm_apm_get_supply(ctrl->apm);
-	if (apm_mode < 0) {
-		cpr3_err(ctrl, "APM get supply failed, rc=%d\n", apm_mode);
-		return apm_mode;
-	}
 
 	if (apm_mode == ctrl->apm_low_supply ||
 	    new_volt >= ctrl->apm_threshold_volt)
@@ -2107,11 +2098,6 @@ static int cpr3_regulator_config_vreg_kryo_ldo(struct cpr3_regulator *vreg,
 	    ldo_volt <= vreg->ldo_max_volt) {
 		/* LDO minimum and maximum headrooms satisfied */
 		apm_mode = msm_apm_get_supply(ctrl->apm);
-		if (apm_mode < 0) {
-			cpr3_err(ctrl, "APM get supply failed, rc=%d\n",
-				 apm_mode);
-			return apm_mode;
-		}
 
 		if (vreg->ldo_regulator_bypass == BHS_MODE) {
 			/*

@@ -617,7 +617,7 @@ static int qpnp_tm_probe(struct platform_device *pdev)
 	chip->adc_type = QPNP_TM_ADC_NONE;
 	rc = of_property_read_u32(node, "qcom,channel-num", &chip->adc_channel);
 	if (!rc) {
-		if (chip->adc_channel < 0 || chip->adc_channel >= ADC_MAX_NUM) {
+		if (chip->adc_channel >= ADC_MAX_NUM) {
 			dev_err(&pdev->dev,
 				"%s: invalid qcom,channel-num=%d specified\n",
 				__func__, chip->adc_channel);

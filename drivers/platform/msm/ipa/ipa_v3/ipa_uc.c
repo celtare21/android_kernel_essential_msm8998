@@ -777,7 +777,7 @@ void ipa3_uc_register_handlers(enum ipa3_hw_features feature,
 {
 	unsigned long flags = 0;
 
-	if (0 > feature || IPA_HW_FEATURE_MAX <= feature) {
+	if (IPA_HW_FEATURE_MAX <= feature) {
 		IPAERR("Feature %u is invalid, not registering hdlrs\n",
 		       feature);
 		return;

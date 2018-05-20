@@ -526,7 +526,7 @@ static int fg_get_sram_prop(struct fg_chip *chip, enum fg_sram_param_id id,
 	int temp, rc, i;
 	u8 buf[4];
 
-	if (id < 0 || id > FG_SRAM_MAX || chip->sp[id].len > sizeof(buf))
+	if (id > FG_SRAM_MAX || chip->sp[id].len > sizeof(buf))
 		return -EINVAL;
 
 	if (chip->battery_missing)
