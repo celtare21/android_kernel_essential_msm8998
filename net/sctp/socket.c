@@ -332,15 +332,14 @@ static struct sctp_af *sctp_sockaddr_af(struct sctp_sock *opt,
 	if (len < sizeof (struct sockaddr))
 		return NULL;
 
-	if (!opt->pf->af_supported(addr->sa.sa_family, opt))
-		return NULL;
-
-	if (addr->sa.sa_family == AF_INET6) {
-		if (len < SIN6_LEN_RFC2133)
+	/* V4 mapped address are really of AF_INET family */
+	if (addr->sa.sa_family == AF_INET6 &&
+	    ipv6_addr_v4mapped(&addr->v6.sin6_addr)) {
+		if (!opt->pf->af_supported(AF_INET, opt))
 			return NULL;
-		/* V4 mapped address are really of AF_INET family */
-		if (ipv6_addr_v4mapped(&addr->v6.sin6_addr) &&
-		    !opt->pf->af_supported(AF_INET, opt))
+	} else {
+		/* Does this PF support this AF? */
+		if (!opt->pf->af_supported(addr->sa.sa_family, opt))
 			return NULL;
 	}
 
@@ -4460,10 +4459,6 @@ int sctp_do_peeloff(struct sock *sk, sctp_assoc_t id, struct socket **sockp)
 	struct sctp_sock *sp = sctp_sk(sk);
 	struct socket *sock;
 	int err = 0;
-
-	/* Do not peel off from one netns to another one. */
-	if (!net_eq(current->nsproxy->net_ns, sock_net(sk)))
-		return -EINVAL;
 
 	if (!asoc)
 		return -EINVAL;
