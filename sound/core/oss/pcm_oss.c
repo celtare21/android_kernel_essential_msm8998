@@ -833,23 +833,6 @@ static int choose_rate(struct snd_pcm_substream *substream,
 	return snd_pcm_hw_param_near(substream, params, SNDRV_PCM_HW_PARAM_RATE, best_rate, NULL);
 }
 
-/* parameter locking: returns immediately if tried during streaming */
-static int lock_params(struct snd_pcm_runtime *runtime)
-{
-	if (mutex_lock_interruptible(&runtime->oss.params_lock))
-		return -ERESTARTSYS;
-	if (atomic_read(&runtime->oss.rw_ref)) {
-		mutex_unlock(&runtime->oss.params_lock);
-		return -EBUSY;
-	}
-	return 0;
-}
-
-static void unlock_params(struct snd_pcm_runtime *runtime)
-{
-	mutex_unlock(&runtime->oss.params_lock);
-}
-
 /* call with params_lock held */
 static int snd_pcm_oss_change_params_locked(struct snd_pcm_substream *substream)
 {
@@ -1789,8 +1772,6 @@ static int snd_pcm_oss_set_rate(struct snd_pcm_oss_file *pcm_oss_file, int rate)
 	for (idx = 1; idx >= 0; --idx) {
 		struct snd_pcm_substream *substream = pcm_oss_file->streams[idx];
 		struct snd_pcm_runtime *runtime;
-		int err;
-
 		if (substream == NULL)
 			continue;
 		runtime = substream->runtime;
@@ -1798,14 +1779,15 @@ static int snd_pcm_oss_set_rate(struct snd_pcm_oss_file *pcm_oss_file, int rate)
 			rate = 1000;
 		else if (rate > 192000)
 			rate = 192000;
-		err = lock_params(runtime);
-		if (err < 0)
-			return err;
+		if (mutex_lock_interruptible(&runtime->oss.params_lock))
+			return -ERESTARTSYS;
+		if (atomic_read(&runtime->oss.rw_ref))
+			return -EBUSY;
 		if (runtime->oss.rate != rate) {
 			runtime->oss.params = 1;
 			runtime->oss.rate = rate;
 		}
-		unlock_params(runtime);
+		mutex_unlock(&runtime->oss.params_lock);
 	}
 	return snd_pcm_oss_get_rate(pcm_oss_file);
 }
@@ -1830,19 +1812,18 @@ static int snd_pcm_oss_set_channels(struct snd_pcm_oss_file *pcm_oss_file, unsig
 	for (idx = 1; idx >= 0; --idx) {
 		struct snd_pcm_substream *substream = pcm_oss_file->streams[idx];
 		struct snd_pcm_runtime *runtime;
-		int err;
-
 		if (substream == NULL)
 			continue;
 		runtime = substream->runtime;
-		err = lock_params(runtime);
-		if (err < 0)
-			return err;
+		if (mutex_lock_interruptible(&runtime->oss.params_lock))
+			return -ERESTARTSYS;
+		if (atomic_read(&runtime->oss.rw_ref))
+			return -EBUSY;
 		if (runtime->oss.channels != channels) {
 			runtime->oss.params = 1;
 			runtime->oss.channels = channels;
 		}
-		unlock_params(runtime);
+		mutex_unlock(&runtime->oss.params_lock);
 	}
 	return snd_pcm_oss_get_channels(pcm_oss_file);
 }
@@ -1915,7 +1896,6 @@ static int snd_pcm_oss_get_formats(struct snd_pcm_oss_file *pcm_oss_file)
 static int snd_pcm_oss_set_format(struct snd_pcm_oss_file *pcm_oss_file, int format)
 {
 	int formats, idx;
-	int err;
 	
 	if (format != AFMT_QUERY) {
 		formats = snd_pcm_oss_get_formats(pcm_oss_file);
@@ -1929,14 +1909,15 @@ static int snd_pcm_oss_set_format(struct snd_pcm_oss_file *pcm_oss_file, int for
 			if (substream == NULL)
 				continue;
 			runtime = substream->runtime;
-			err = lock_params(runtime);
-			if (err < 0)
-				return err;
+			if (atomic_read(&runtime->oss.rw_ref))
+				return -EBUSY;
+			if (mutex_lock_interruptible(&runtime->oss.params_lock))
+				return -ERESTARTSYS;
 			if (runtime->oss.format != format) {
 				runtime->oss.params = 1;
 				runtime->oss.format = format;
 			}
-			unlock_params(runtime);
+			mutex_unlock(&runtime->oss.params_lock);
 		}
 	}
 	return snd_pcm_oss_get_format(pcm_oss_file);
@@ -1984,11 +1965,12 @@ static int snd_pcm_oss_set_subdivide(struct snd_pcm_oss_file *pcm_oss_file, int 
 		if (substream == NULL)
 			continue;
 		runtime = substream->runtime;
-		err = lock_params(runtime);
-		if (err < 0)
-			return err;
+		if (atomic_read(&runtime->oss.rw_ref))
+			return -EBUSY;
+		if (mutex_lock_interruptible(&runtime->oss.params_lock))
+			return -ERESTARTSYS;
 		err = snd_pcm_oss_set_subdivide1(substream, subdivide);
-		unlock_params(runtime);
+		mutex_unlock(&runtime->oss.params_lock);
 		if (err < 0)
 			return err;
 	}
@@ -2023,11 +2005,12 @@ static int snd_pcm_oss_set_fragment(struct snd_pcm_oss_file *pcm_oss_file, unsig
 		if (substream == NULL)
 			continue;
 		runtime = substream->runtime;
-		err = lock_params(runtime);
-		if (err < 0)
-			return err;
+		if (atomic_read(&runtime->oss.rw_ref))
+			return -EBUSY;
+		if (mutex_lock_interruptible(&runtime->oss.params_lock))
+			return -ERESTARTSYS;
 		err = snd_pcm_oss_set_fragment1(substream, val);
-		unlock_params(runtime);
+		mutex_unlock(&runtime->oss.params_lock);
 		if (err < 0)
 			return err;
 	}
