@@ -1404,7 +1404,6 @@ static ssize_t snd_pcm_oss_write1(struct snd_pcm_substream *substream, const cha
 	if (atomic_read(&substream->mmap_count))
 		return -ENXIO;
 
-	atomic_inc(&runtime->oss.rw_ref);
 	while (bytes > 0) {
 		if (mutex_lock_interruptible(&runtime->oss.params_lock)) {
 			tmp = -ERESTARTSYS;
@@ -1468,7 +1467,6 @@ static ssize_t snd_pcm_oss_write1(struct snd_pcm_substream *substream, const cha
 		}
 		tmp = 0;
 	}
-	atomic_dec(&runtime->oss.rw_ref);
 	return xfer > 0 ? (snd_pcm_sframes_t)xfer : tmp;
 }
 
@@ -1514,7 +1512,6 @@ static ssize_t snd_pcm_oss_read1(struct snd_pcm_substream *substream, char __use
 	if (atomic_read(&substream->mmap_count))
 		return -ENXIO;
 
-	atomic_inc(&runtime->oss.rw_ref);
 	while (bytes > 0) {
 		if (mutex_lock_interruptible(&runtime->oss.params_lock)) {
 			tmp = -ERESTARTSYS;
@@ -1563,7 +1560,6 @@ static ssize_t snd_pcm_oss_read1(struct snd_pcm_substream *substream, char __use
 		}
 		tmp = 0;
 	}
-	atomic_dec(&runtime->oss.rw_ref);
 	return xfer > 0 ? (snd_pcm_sframes_t)xfer : tmp;
 }
 
@@ -1670,11 +1666,8 @@ static int snd_pcm_oss_sync(struct snd_pcm_oss_file *pcm_oss_file)
 			goto __direct;
 		if ((err = snd_pcm_oss_make_ready(substream)) < 0)
 			return err;
-		atomic_inc(&runtime->oss.rw_ref);
-		if (mutex_lock_interruptible(&runtime->oss.params_lock)) {
-			atomic_dec(&runtime->oss.rw_ref);
+		if (mutex_lock_interruptible(&runtime->oss.params_lock))
 			return -ERESTARTSYS;
-		}
 		format = snd_pcm_oss_format_from(runtime->oss.format);
 		width = snd_pcm_format_physical_width(format);
 		if (runtime->oss.buffer_used > 0) {
@@ -1686,8 +1679,10 @@ static int snd_pcm_oss_sync(struct snd_pcm_oss_file *pcm_oss_file)
 						   runtime->oss.buffer + runtime->oss.buffer_used,
 						   size);
 			err = snd_pcm_oss_sync1(substream, runtime->oss.period_bytes);
-			if (err < 0)
-				goto unlock;
+			if (err < 0) {
+				mutex_unlock(&runtime->oss.params_lock);
+				return err;
+			}
 		} else if (runtime->oss.period_ptr > 0) {
 #ifdef OSS_DEBUG
 			pcm_dbg(substream->pcm, "sync: period_ptr\n");
@@ -1697,8 +1692,10 @@ static int snd_pcm_oss_sync(struct snd_pcm_oss_file *pcm_oss_file)
 						   runtime->oss.buffer,
 						   size * 8 / width);
 			err = snd_pcm_oss_sync1(substream, size);
-			if (err < 0)
-				goto unlock;
+			if (err < 0) {
+				mutex_unlock(&runtime->oss.params_lock);
+				return err;
+			}
 		}
 		/*
 		 * The ALSA's period might be a bit large than OSS one.
@@ -1729,11 +1726,7 @@ static int snd_pcm_oss_sync(struct snd_pcm_oss_file *pcm_oss_file)
 				snd_pcm_lib_writev(substream, buffers, size);
 			}
 		}
-unlock:
 		mutex_unlock(&runtime->oss.params_lock);
-		atomic_dec(&runtime->oss.rw_ref);
-		if (err < 0)
-			return err;
 		/*
 		 * finish sync: drain the buffer
 		 */
@@ -1781,8 +1774,6 @@ static int snd_pcm_oss_set_rate(struct snd_pcm_oss_file *pcm_oss_file, int rate)
 			rate = 192000;
 		if (mutex_lock_interruptible(&runtime->oss.params_lock))
 			return -ERESTARTSYS;
-		if (atomic_read(&runtime->oss.rw_ref))
-			return -EBUSY;
 		if (runtime->oss.rate != rate) {
 			runtime->oss.params = 1;
 			runtime->oss.rate = rate;
@@ -1817,8 +1808,6 @@ static int snd_pcm_oss_set_channels(struct snd_pcm_oss_file *pcm_oss_file, unsig
 		runtime = substream->runtime;
 		if (mutex_lock_interruptible(&runtime->oss.params_lock))
 			return -ERESTARTSYS;
-		if (atomic_read(&runtime->oss.rw_ref))
-			return -EBUSY;
 		if (runtime->oss.channels != channels) {
 			runtime->oss.params = 1;
 			runtime->oss.channels = channels;
@@ -1909,8 +1898,6 @@ static int snd_pcm_oss_set_format(struct snd_pcm_oss_file *pcm_oss_file, int for
 			if (substream == NULL)
 				continue;
 			runtime = substream->runtime;
-			if (atomic_read(&runtime->oss.rw_ref))
-				return -EBUSY;
 			if (mutex_lock_interruptible(&runtime->oss.params_lock))
 				return -ERESTARTSYS;
 			if (runtime->oss.format != format) {
@@ -1965,8 +1952,6 @@ static int snd_pcm_oss_set_subdivide(struct snd_pcm_oss_file *pcm_oss_file, int 
 		if (substream == NULL)
 			continue;
 		runtime = substream->runtime;
-		if (atomic_read(&runtime->oss.rw_ref))
-			return -EBUSY;
 		if (mutex_lock_interruptible(&runtime->oss.params_lock))
 			return -ERESTARTSYS;
 		err = snd_pcm_oss_set_subdivide1(substream, subdivide);
@@ -2005,8 +1990,6 @@ static int snd_pcm_oss_set_fragment(struct snd_pcm_oss_file *pcm_oss_file, unsig
 		if (substream == NULL)
 			continue;
 		runtime = substream->runtime;
-		if (atomic_read(&runtime->oss.rw_ref))
-			return -EBUSY;
 		if (mutex_lock_interruptible(&runtime->oss.params_lock))
 			return -ERESTARTSYS;
 		err = snd_pcm_oss_set_fragment1(substream, val);
@@ -2401,7 +2384,6 @@ static void snd_pcm_oss_init_substream(struct snd_pcm_substream *substream,
 	runtime->oss.maxfrags = 0;
 	runtime->oss.subdivision = 0;
 	substream->pcm_release = snd_pcm_oss_release_substream;
-	atomic_set(&runtime->oss.rw_ref, 0);
 }
 
 static int snd_pcm_oss_release_file(struct snd_pcm_oss_file *pcm_oss_file)
