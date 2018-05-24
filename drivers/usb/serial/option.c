@@ -554,19 +554,7 @@ static void option_instat_callback(struct urb *urb);
 #define WETELECOM_PRODUCT_WMD300		0x6803
 
 
-<<<<<<< HEAD
-static const struct option_blacklist_info telit_me910_dual_modem_blacklist = {
-	.sendsetup = BIT(0),
-	.reserved = BIT(3),
-};
-
-static const struct option_blacklist_info telit_le910_blacklist = {
-	.sendsetup = BIT(0),
-	.reserved = BIT(1) | BIT(2),
-};
-=======
 /* Device flags */
->>>>>>> eac7fd6c1ad300e548b3beda0818c8b8ffca4a74
 
 /* Interface does not support modem-control requests */
 #define NCTRL(ifnum)	((BIT(ifnum) & 0xff) << 8)
@@ -1082,12 +1070,6 @@ static const struct usb_device_id option_ids[] = {
 	/* Quectel products using Qualcomm vendor ID */
 	{ USB_DEVICE(QUALCOMM_VENDOR_ID, QUECTEL_PRODUCT_UC15)},
 	{ USB_DEVICE(QUALCOMM_VENDOR_ID, QUECTEL_PRODUCT_UC20),
-<<<<<<< HEAD
-	  .driver_info = (kernel_ulong_t)&net_intf4_blacklist },
-	/* Yuga products use Qualcomm vendor ID */
-	{ USB_DEVICE(QUALCOMM_VENDOR_ID, YUGA_PRODUCT_CLM920_NC5),
-	  .driver_info = (kernel_ulong_t)&yuga_clm920_nc5_blacklist },
-=======
 	  .driver_info = RSVD(4) },
 	/* Yuga products use Qualcomm vendor ID */
 	{ USB_DEVICE(QUALCOMM_VENDOR_ID, YUGA_PRODUCT_CLM920_NC5),
@@ -1095,22 +1077,15 @@ static const struct usb_device_id option_ids[] = {
 	/* u-blox products using Qualcomm vendor ID */
 	{ USB_DEVICE(QUALCOMM_VENDOR_ID, UBLOX_PRODUCT_R410M),
 	  .driver_info = RSVD(1) | RSVD(3) },
->>>>>>> eac7fd6c1ad300e548b3beda0818c8b8ffca4a74
 	/* Quectel products using Quectel vendor ID */
 	{ USB_DEVICE(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_EC21),
 	  .driver_info = RSVD(4) },
 	{ USB_DEVICE(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_EC25),
-<<<<<<< HEAD
-	  .driver_info = (kernel_ulong_t)&net_intf4_blacklist },
-	{ USB_DEVICE(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_BG96),
-	  .driver_info = (kernel_ulong_t)&net_intf4_blacklist },
-=======
 	  .driver_info = RSVD(4) },
 	{ USB_DEVICE(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_BG96),
 	  .driver_info = RSVD(4) },
 	{ USB_DEVICE(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_EP06),
 	  .driver_info = RSVD(4) | RSVD(5) },
->>>>>>> eac7fd6c1ad300e548b3beda0818c8b8ffca4a74
 	{ USB_DEVICE(CMOTECH_VENDOR_ID, CMOTECH_PRODUCT_6001) },
 	{ USB_DEVICE(CMOTECH_VENDOR_ID, CMOTECH_PRODUCT_CMU_300) },
 	{ USB_DEVICE(CMOTECH_VENDOR_ID, CMOTECH_PRODUCT_6003),
@@ -1169,15 +1144,9 @@ static const struct usb_device_id option_ids[] = {
 	{ USB_DEVICE_INTERFACE_CLASS(TELIT_VENDOR_ID, TELIT_PRODUCT_LE922_USBCFG5, 0xff),
 	  .driver_info = RSVD(0) | RSVD(1) | NCTRL(2) | RSVD(3) },
 	{ USB_DEVICE(TELIT_VENDOR_ID, TELIT_PRODUCT_ME910),
-<<<<<<< HEAD
-		.driver_info = (kernel_ulong_t)&telit_me910_blacklist },
-	{ USB_DEVICE(TELIT_VENDOR_ID, TELIT_PRODUCT_ME910_DUAL_MODEM),
-		.driver_info = (kernel_ulong_t)&telit_me910_dual_modem_blacklist },
-=======
 	  .driver_info = NCTRL(0) | RSVD(1) | RSVD(3) },
 	{ USB_DEVICE(TELIT_VENDOR_ID, TELIT_PRODUCT_ME910_DUAL_MODEM),
 	  .driver_info = NCTRL(0) | RSVD(3) },
->>>>>>> eac7fd6c1ad300e548b3beda0818c8b8ffca4a74
 	{ USB_DEVICE(TELIT_VENDOR_ID, TELIT_PRODUCT_LE910),
 	  .driver_info = NCTRL(0) | RSVD(1) | RSVD(2) },
 	{ USB_DEVICE(TELIT_VENDOR_ID, TELIT_PRODUCT_LE910_USBCFG4),
@@ -1807,16 +1776,9 @@ static const struct usb_device_id option_ids[] = {
 	{ USB_DEVICE(LONGCHEER_VENDOR_ID, FOUR_G_SYSTEMS_PRODUCT_W14),
 	  .driver_info = NCTRL(0) | NCTRL(1) },
 	{ USB_DEVICE(LONGCHEER_VENDOR_ID, FOUR_G_SYSTEMS_PRODUCT_W100),
-<<<<<<< HEAD
-	  .driver_info = (kernel_ulong_t)&four_g_w100_blacklist
-	},
-	{USB_DEVICE(LONGCHEER_VENDOR_ID, FUJISOFT_PRODUCT_FS040U),
-	 .driver_info = (kernel_ulong_t)&net_intf3_blacklist},
-=======
 	  .driver_info = NCTRL(1) | NCTRL(2) | RSVD(3) },
 	{USB_DEVICE(LONGCHEER_VENDOR_ID, FUJISOFT_PRODUCT_FS040U),
 	 .driver_info = RSVD(3)},
->>>>>>> eac7fd6c1ad300e548b3beda0818c8b8ffca4a74
 	{ USB_DEVICE_INTERFACE_CLASS(LONGCHEER_VENDOR_ID, SPEEDUP_PRODUCT_SU9800, 0xff) },
 	{ USB_DEVICE_INTERFACE_CLASS(LONGCHEER_VENDOR_ID, 0x9801, 0xff),
 	  .driver_info = RSVD(3) },
@@ -1967,15 +1929,9 @@ static const struct usb_device_id option_ids[] = {
 	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7d04, 0xff) },			/* D-Link DWM-158 */
 	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7d0e, 0xff) },			/* D-Link DWM-157 C1 */
 	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7e19, 0xff),			/* D-Link DWM-221 B1 */
-<<<<<<< HEAD
-	  .driver_info = (kernel_ulong_t)&net_intf4_blacklist },
-	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7e35, 0xff),			/* D-Link DWM-222 */
-	  .driver_info = (kernel_ulong_t)&net_intf4_blacklist },
-=======
 	  .driver_info = RSVD(4) },
 	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7e35, 0xff),			/* D-Link DWM-222 */
 	  .driver_info = RSVD(4) },
->>>>>>> eac7fd6c1ad300e548b3beda0818c8b8ffca4a74
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x07d1, 0x3e01, 0xff, 0xff, 0xff) }, /* D-Link DWM-152/C1 */
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x07d1, 0x3e02, 0xff, 0xff, 0xff) }, /* D-Link DWM-156/C1 */
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x07d1, 0x7e11, 0xff, 0xff, 0xff) }, /* D-Link DWM-156/A3 */
