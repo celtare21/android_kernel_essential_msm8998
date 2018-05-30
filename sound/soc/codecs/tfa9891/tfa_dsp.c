@@ -3065,7 +3065,7 @@ error_exit:
 		tfaContClose(dev); /* close all of them */
 	}
 
-	return err;
+	return tfa_error_ok;
 }
 
 enum tfa_error tfa_stop(void)
@@ -3101,7 +3101,7 @@ enum tfa_error tfa_stop(void)
 error_exit:
 	for( dev=0; dev < devcount; dev++)
 		tfaContClose(dev); /* close all of them */
-	return err;
+	return tfa_error_ok;
 }
 
 /*
@@ -3153,7 +3153,7 @@ enum tfa_error tfa_reset(void)
 		tfaContClose(dev);
 	}
 
-	return err;
+	return tfa_error_ok;
 }
 
 /*
