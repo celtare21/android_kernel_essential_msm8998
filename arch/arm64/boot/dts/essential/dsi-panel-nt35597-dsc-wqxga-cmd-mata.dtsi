@@ -57,6 +57,8 @@
 		qcom,panel-allow-phy-poweroff;
 		qcom,mdss-pan-physical-width-dimension = <66>;
 		qcom,mdss-pan-physical-height-dimension = <129>;
+		qcom,partial-update-enabled;
+		qcom,panel-roi-alignment = <8 0 8 0 1080 0>;
 
 		qcom,adjust-timer-wakeup-ms = <1>;
 
