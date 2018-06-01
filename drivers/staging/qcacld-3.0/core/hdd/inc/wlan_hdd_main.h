@@ -186,6 +186,11 @@
 #define MAX_GENIE_LEN (512)
 #define MIN_GENIE_LEN (2)
 
+/* One per STA: 1 for BCMC_STA_ID, 1 for each SAP_SELF_STA_ID,
+ * 1 for WDS_STAID
+ */
+#define HDD_MAX_ADAPTERS (WLAN_MAX_STA_COUNT + QDF_MAX_NO_OF_SAP_MODE + 2)
+
 #define WLAN_CHIP_VERSION   "WCNSS"
 
 #define hdd_log_ratelimited(rate, level, args...) \
@@ -1828,6 +1833,33 @@ enum hdd_sta_smps_param {
 	HDD_STA_SMPS_PARAM_DTIM_1CHRX_ENABLE = 5
 };
 
+/**
+ * struct hdd_cache_channel_info - Structure of the channel info
+ * which needs to be cached
+ * @channel_num: channel number
+ * @reg_status: Current regulatory status of the channel
+ * Enable
+ * Disable
+ * DFS
+ * Invalid
+ * @wiphy_status: Current wiphy status
+ */
+struct hdd_cache_channel_info {
+	uint32_t channel_num;
+	enum channel_state reg_status;
+	uint32_t wiphy_status;
+};
+
+/**
+ * struct hdd_cache_channels - Structure of the channels to be cached
+ * @num_channels: Number of channels to be cached
+ * @channel_info: Structure of the channel info
+ */
+struct hdd_cache_channels {
+	uint32_t num_channels;
+	struct hdd_cache_channel_info *channel_info;
+};
+
 /** Adapter structure definition */
 struct hdd_context_s {
 	/** Global CDS context  */
@@ -1842,10 +1874,7 @@ struct hdd_context_s {
 	qdf_spinlock_t hdd_adapter_lock;
 	qdf_list_t hddAdapters; /* List of adapters */
 
-	/* One per STA: 1 for BCMC_STA_ID, 1 for each SAP_SELF_STA_ID,
-	 * 1 for WDS_STAID
-	 */
-	hdd_adapter_t *sta_to_adapter[WLAN_MAX_STA_COUNT + QDF_MAX_NO_OF_SAP_MODE + 2];
+	hdd_adapter_t *sta_to_adapter[HDD_MAX_ADAPTERS];
 
 	/** Pointer for firmware image data */
 	const struct firmware *fw;
@@ -2131,6 +2160,13 @@ struct hdd_context_s {
 	uint8_t active_ac;
 	qdf_wake_lock_t monitor_mode_wakelock;
 	struct qdf_mac_addr hw_macaddr;
+#ifdef WLAN_POWER_DEBUGFS
+	/* mutex lock to block concurrent access */
+	struct mutex power_stats_lock;
+#endif
+	qdf_atomic_t is_acs_allowed;
+	struct hdd_cache_channels *original_channels;
+	qdf_mutex_t cache_channel_lock;
 };
 
 int hdd_validate_channel_and_bandwidth(hdd_adapter_t *adapter,
@@ -2903,5 +2939,22 @@ hdd_station_info_t *hdd_get_stainfo(hdd_station_info_t *aStaInfo,
 
 int hdd_driver_memdump_init(void);
 void hdd_driver_memdump_deinit(void);
+
+/**
+ * hdd_is_cli_iface_up() - check if there is any cli iface up
+ * @hdd_ctx: HDD context
+ *
+ * Return: return true if there is any cli iface(STA/P2P_CLI) is up
+ *         else return false
+ */
+bool hdd_is_cli_iface_up(hdd_context_t *hdd_ctx);
+
+/**
+ * wlan_hdd_free_cache_channels() - Free the cache channels list
+ * @hdd_ctx: Pointer to HDD context
+ *
+ * Return: None
+ */
+void wlan_hdd_free_cache_channels(hdd_context_t *hdd_ctx);
 
 #endif /* end #if !defined(WLAN_HDD_MAIN_H) */

@@ -1804,6 +1804,7 @@ typedef struct {
 	uint32_t wmm_caps;
 	/* since this is 4 byte aligned, we don't declare it as tlv array */
 	uint32_t mcsset[WMI_HOST_ROAM_OFFLOAD_NUM_MCS_SET >> 2];
+	uint32_t ho_delay_for_rx;
 } roam_offload_param;
 
 #define WMI_FILS_MAX_RRK_LENGTH 64
@@ -7465,6 +7466,20 @@ struct wmi_invoke_neighbor_report_params {
 	uint32_t vdev_id;
 	uint32_t send_resp_to_host;
 	struct mac_ssid ssid;
+};
+
+/**
+ * struct wmi_hw_filter_req_params - HW Filter mode parameters
+ * @vdev: VDEV id
+ * @enable: True: Enable HW filter, False: Disable
+ * @mode_bitmap: the hardware filter mode to configure
+ * @bssid: bss_id for get session.
+ */
+struct wmi_hw_filter_req_params {
+	uint8_t vdev_id;
+	bool enable;
+	uint8_t mode_bitmap;
+	struct qdf_mac_addr bssid;
 };
 
 #endif /* _WMI_UNIFIED_PARAM_H_ */

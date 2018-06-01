@@ -47,6 +47,7 @@
 #include <net/cfg80211.h>
 #include <net/ieee80211_radiotap.h>
 #include "sap_api.h"
+#include "sme_power_save_api.h"
 #include "wlan_hdd_wmm.h"
 #include "wlan_hdd_tdls.h"
 #include <wlan_hdd_ipa.h>
@@ -468,6 +469,56 @@ static void hdd_get_transmit_sta_id(hdd_adapter_t *adapter,
 			*station_id = sta_ctx->conn_info.staId[0];
 	}
 }
+
+/**
+ * hdd_clear_tx_rx_connectivity_stats() - clear connectivity stats
+ * @hdd_ctx: pointer to HDD Station Context
+ *
+ * Return: None
+ */
+static void hdd_clear_tx_rx_connectivity_stats(hdd_adapter_t *adapter)
+{
+	QDF_TRACE(QDF_MODULE_ID_HDD_DATA, QDF_TRACE_LEVEL_DEBUG,
+		"Clear txrx connectivity stats");
+	qdf_mem_zero(&adapter->hdd_stats.hdd_arp_stats,
+		     sizeof(adapter->hdd_stats.hdd_arp_stats));
+	qdf_mem_zero(&adapter->hdd_stats.hdd_dns_stats,
+		     sizeof(adapter->hdd_stats.hdd_dns_stats));
+	qdf_mem_zero(&adapter->hdd_stats.hdd_tcp_stats,
+		     sizeof(adapter->hdd_stats.hdd_tcp_stats));
+	qdf_mem_zero(&adapter->hdd_stats.hdd_icmpv4_stats,
+		     sizeof(adapter->hdd_stats.hdd_icmpv4_stats));
+	adapter->pkt_type_bitmap = 0;
+	adapter->track_arp_ip = 0;
+	qdf_mem_zero(adapter->dns_payload, adapter->track_dns_domain_len);
+	adapter->track_dns_domain_len = 0;
+	adapter->track_src_port = 0;
+	adapter->track_dest_port = 0;
+	adapter->track_dest_ipv4 = 0;
+}
+
+void hdd_reset_all_adapters_connectivity_stats(hdd_context_t *hdd_ctx)
+{
+	hdd_adapter_list_node_t *adapterNode = NULL, *pNext = NULL;
+	QDF_STATUS status;
+	hdd_adapter_t *adapter;
+
+	ENTER();
+
+	status = hdd_get_front_adapter(hdd_ctx, &adapterNode);
+
+	while (NULL != adapterNode && QDF_STATUS_SUCCESS == status) {
+		adapter = adapterNode->pAdapter;
+		hdd_clear_tx_rx_connectivity_stats(adapter);
+
+		status = hdd_get_next_adapter(hdd_ctx, adapterNode, &pNext);
+		adapterNode = pNext;
+	}
+
+	EXIT();
+
+}
+
 
 /**
  * hdd_tx_rx_is_dns_domain_name_match() - function to check whether dns

@@ -84,7 +84,9 @@
 #define WMA_LOG_COMPLETION_TIMER 3000 /* 3 seconds */
 
 #define WMI_TLV_HEADROOM 128
+#ifdef TRACE_RECORD
 uint8_t *mac_trace_get_wma_msg_string(uint16_t wmaMsg);
+#endif
 static uint32_t g_fw_wlan_feat_caps;
 /**
  * wma_get_fw_wlan_feat_caps() - get fw feature capablity
@@ -8060,7 +8062,7 @@ QDF_STATUS wma_mc_process_msg(void *cds_context, cds_msg_t *msg)
 		qdf_mem_free(msg->bodyptr);
 		break;
 	case WMA_CONF_HW_FILTER: {
-		struct hw_filter_request *req = msg->bodyptr;
+		struct wmi_hw_filter_req_params *req = msg->bodyptr;
 
 		qdf_status = wma_conf_hw_filter_mode(wma_handle, req);
 		break;
