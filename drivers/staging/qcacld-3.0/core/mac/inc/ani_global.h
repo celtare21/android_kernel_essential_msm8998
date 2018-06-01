@@ -1021,10 +1021,6 @@ typedef struct sAniSirGlobal {
 
 	/* 11k Offload Support */
 	bool is_11k_offload_supported;
-
-	uint32_t peer_rssi;
-	uint32_t peer_txrate;
-	uint32_t peer_rxrate;
 } tAniSirGlobal;
 
 typedef enum {

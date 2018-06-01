@@ -1772,11 +1772,6 @@ htt_tx_desc_init(htt_pdev_handle pdev,
 				     hw_classify);
 
 		ce_pkt_type = htt_to_ce_pkt_type[pkt_type];
-		if (0xffffffff == ce_pkt_type) {
-			QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_INFO_HIGH,
-			"Invalid HTT pkt type %d\n", pkt_type);
-			return QDF_STATUS_E_INVAL;
-		}
 	}
 
 	/*
@@ -1826,8 +1821,6 @@ htt_tx_desc_init(htt_pdev_handle pdev,
 	 */
 	local_word3 = HTT_INVALID_PEER;
 	channel_freq = htt_get_channel_freq(type, ext_header_data);
-	if (channel_freq != HTT_INVALID_CHANNEL)
-		HTT_TX_DESC_CHAN_FREQ_SET(local_word3, channel_freq);
 #if HTT_PADDR64
 	*word4 = local_word3;
 #else /* ! HTT_PADDR64 */

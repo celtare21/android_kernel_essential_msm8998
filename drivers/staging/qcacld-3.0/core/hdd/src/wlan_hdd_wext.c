@@ -3343,7 +3343,7 @@ int hdd_wlan_get_frag_threshold(hdd_adapter_t *pAdapter,
  * @channel: channel to be converted
  * @pfreq: where to store the frequency
  *
- * Return: 0 on success, otherwise a negative errno
+ * Return: 1 on success, otherwise a negative errno
  */
 int hdd_wlan_get_freq(uint32_t channel, uint32_t *pfreq)
 {
@@ -3353,7 +3353,7 @@ int hdd_wlan_get_freq(uint32_t channel, uint32_t *pfreq)
 		for (i = 0; i < FREQ_CHAN_MAP_TABLE_SIZE; i++) {
 			if (channel == freq_chan_map[i].chan) {
 				*pfreq = freq_chan_map[i].freq;
-				return 0;
+				return 1;
 			}
 		}
 	}
@@ -3913,8 +3913,9 @@ static void hdd_get_peer_rssi_cb(struct sir_peer_info_resp *sta_rssi,
 {
 	struct statsContext *get_rssi_context;
 	struct sir_peer_info *rssi_info;
-	uint8_t peer_num;
+	uint8_t peer_num, i;
 	hdd_adapter_t *padapter;
+	hdd_station_info_t *stainfo;
 
 	if ((sta_rssi == NULL) || (context == NULL)) {
 		hdd_err("Bad param, sta_rssi [%pK] context [%pK]",
@@ -3957,6 +3958,19 @@ static void hdd_get_peer_rssi_cb(struct sir_peer_info_resp *sta_rssi,
 	qdf_mem_copy(padapter->peer_sta_info.info, rssi_info,
 		peer_num * sizeof(*rssi_info));
 	padapter->peer_sta_info.sta_num = peer_num;
+
+	for (i = 0; i < peer_num; i++) {
+		stainfo = hdd_get_stainfo(padapter->cache_sta_info,
+					  rssi_info[i].peer_macaddr);
+		if (stainfo) {
+			stainfo->rssi = rssi_info[i].rssi;
+			stainfo->tx_rate = rssi_info[i].tx_rate;
+			stainfo->rx_rate = rssi_info[i].rx_rate;
+			hdd_info("rssi:%d tx_rate:%u rx_rate:%u %pM",
+				 stainfo->rssi, stainfo->tx_rate,
+				 stainfo->rx_rate, stainfo->macAddrSTA.bytes);
+		}
+	}
 
 	/* notify the caller */
 	complete(&get_rssi_context->completion);
@@ -4456,7 +4470,7 @@ static int iw_set_commit(struct net_device *dev, struct iw_request_info *info,
  * Return: 0 on success, non-zero on error
  */
 static int __iw_get_name(struct net_device *dev,
-		       struct iw_request_info *info, char *wrqu, char *extra)
+		       struct iw_request_info *info, union iwreq_data *wrqu, char *extra)
 {
 	hdd_adapter_t *adapter;
 	hdd_context_t *hdd_ctx;
@@ -4470,7 +4484,7 @@ static int __iw_get_name(struct net_device *dev,
 	if (0 != ret)
 		return ret;
 
-	strlcpy(wrqu, "Qcom:802.11n", IFNAMSIZ);
+	strlcpy(wrqu->name, "Qcom:802.11n", IFNAMSIZ);
 	EXIT();
 	return 0;
 }
@@ -4486,7 +4500,7 @@ static int __iw_get_name(struct net_device *dev,
  */
 static int iw_get_name(struct net_device *dev,
 			 struct iw_request_info *info,
-			 char *wrqu, char *extra)
+			 union iwreq_data *wrqu, char *extra)
 {
 	int ret;
 
@@ -4841,7 +4855,7 @@ static int __iw_get_freq(struct net_device *dev, struct iw_request_info *info,
 			return -EIO;
 		}
 		status = hdd_wlan_get_freq(channel, &freq);
-		if (0 == status) {
+		if (true == status) {
 			/* Set Exponent parameter as 6 (MHZ)
 			 * in struct iw_freq iwlist & iwconfig
 			 * command shows frequency into proper
@@ -7468,82 +7482,78 @@ int wlan_hdd_update_phymode(struct net_device *net, tHalHandle hal,
 		break;
 	}
 
-	if (phymode != -EIO) {
-		sme_config = qdf_mem_malloc(sizeof(*sme_config));
-		if (!sme_config) {
-			hdd_err("Failed to allocate memory for sme_config");
-			return -ENOMEM;
-		}
-		qdf_mem_zero(sme_config, sizeof(*sme_config));
-		sme_get_config_param(hal, sme_config);
-		sme_config->csrConfig.phyMode = phymode;
+	sme_config = qdf_mem_malloc(sizeof(*sme_config));
+	if (!sme_config) {
+		hdd_err("Failed to allocate memory for sme_config");
+		return -ENOMEM;
+	}
+	qdf_mem_zero(sme_config, sizeof(*sme_config));
+	sme_get_config_param(hal, sme_config);
+	sme_config->csrConfig.phyMode = phymode;
 #ifdef QCA_HT_2040_COEX
-		if (phymode == eCSR_DOT11_MODE_11n &&
-		    chwidth == WNI_CFG_CHANNEL_BONDING_MODE_DISABLE) {
-			sme_config->csrConfig.obssEnabled = false;
-			halStatus = sme_set_ht2040_mode(hal,
-							pAdapter->sessionId,
-							eHT_CHAN_HT20, false);
-			if (halStatus == QDF_STATUS_E_FAILURE) {
-				hdd_err("Failed to disable OBSS");
-				retval = -EIO;
-				goto free;
-			}
-		} else if (phymode == eCSR_DOT11_MODE_11n &&
-			   chwidth == WNI_CFG_CHANNEL_BONDING_MODE_ENABLE) {
-			sme_config->csrConfig.obssEnabled = true;
-			halStatus = sme_set_ht2040_mode(hal,
-							pAdapter->sessionId,
-							eHT_CHAN_HT20, true);
-			if (halStatus == QDF_STATUS_E_FAILURE) {
-				hdd_err("Failed to enable OBSS");
-				retval = -EIO;
-				goto free;
-			}
-		}
-#endif
-		sme_config->csrConfig.eBand = curr_band;
-		sme_config->csrConfig.bandCapability = curr_band;
-		if (curr_band == eCSR_BAND_24)
-			sme_config->csrConfig.Is11hSupportEnabled = 0;
-		else
-			sme_config->csrConfig.Is11hSupportEnabled =
-				phddctx->config->Is11hSupportEnabled;
-		if (curr_band == eCSR_BAND_24)
-			sme_config->csrConfig.channelBondingMode24GHz = chwidth;
-		else if (curr_band == eCSR_BAND_24)
-			sme_config->csrConfig.channelBondingMode5GHz = chwidth;
-		else {
-			sme_config->csrConfig.channelBondingMode24GHz = chwidth;
-			sme_config->csrConfig.channelBondingMode5GHz = chwidth;
-		}
-		sme_config->csrConfig.nVhtChannelWidth = vhtchanwidth;
-		sme_update_config(hal, sme_config);
-
-		phddctx->config->dot11Mode = hdd_dot11mode;
-		phddctx->config->nChannelBondingMode24GHz =
-			sme_config->csrConfig.channelBondingMode24GHz;
-		phddctx->config->nChannelBondingMode5GHz =
-			sme_config->csrConfig.channelBondingMode5GHz;
-		phddctx->config->vhtChannelWidth = vhtchanwidth;
-		if (hdd_update_config_cfg(phddctx) == false) {
-			hdd_err("could not update config_dat");
+	if (phymode == eCSR_DOT11_MODE_11n &&
+	    chwidth == WNI_CFG_CHANNEL_BONDING_MODE_DISABLE) {
+		sme_config->csrConfig.obssEnabled = false;
+		halStatus = sme_set_ht2040_mode(hal,
+						pAdapter->sessionId,
+						eHT_CHAN_HT20, false);
+		if (halStatus == QDF_STATUS_E_FAILURE) {
+			hdd_err("Failed to disable OBSS");
 			retval = -EIO;
 			goto free;
 		}
-
-		if (band_5g) {
-			if (phddctx->config->nChannelBondingMode5GHz)
-				phddctx->wiphy->bands[HDD_NL80211_BAND_5GHZ]->ht_cap.cap
-					|= IEEE80211_HT_CAP_SUP_WIDTH_20_40;
-			else
-				phddctx->wiphy->bands[HDD_NL80211_BAND_5GHZ]->ht_cap.cap
-					&= ~IEEE80211_HT_CAP_SUP_WIDTH_20_40;
+	} else if (phymode == eCSR_DOT11_MODE_11n &&
+		   chwidth == WNI_CFG_CHANNEL_BONDING_MODE_ENABLE) {
+		sme_config->csrConfig.obssEnabled = true;
+		halStatus = sme_set_ht2040_mode(hal,
+						pAdapter->sessionId,
+						eHT_CHAN_HT20, true);
+		if (halStatus == QDF_STATUS_E_FAILURE) {
+			hdd_err("Failed to enable OBSS");
+			retval = -EIO;
+			goto free;
 		}
-
-		hdd_debug("New_Phymode= %d ch_bonding=%d band=%d VHT_ch_width=%u",
-			phymode, chwidth, curr_band, vhtchanwidth);
 	}
+#endif
+	sme_config->csrConfig.eBand = curr_band;
+	sme_config->csrConfig.bandCapability = curr_band;
+	if (curr_band == eCSR_BAND_24)
+		sme_config->csrConfig.Is11hSupportEnabled = 0;
+	else
+		sme_config->csrConfig.Is11hSupportEnabled =
+			phddctx->config->Is11hSupportEnabled;
+	if (curr_band == eCSR_BAND_24)
+		sme_config->csrConfig.channelBondingMode24GHz = chwidth;
+	else if (curr_band == eCSR_BAND_24)
+		sme_config->csrConfig.channelBondingMode5GHz = chwidth;
+	else {
+		sme_config->csrConfig.channelBondingMode24GHz = chwidth;
+		sme_config->csrConfig.channelBondingMode5GHz = chwidth;
+	}
+	sme_config->csrConfig.nVhtChannelWidth = vhtchanwidth;
+	sme_update_config(hal, sme_config);
+		phddctx->config->dot11Mode = hdd_dot11mode;
+	phddctx->config->nChannelBondingMode24GHz =
+		sme_config->csrConfig.channelBondingMode24GHz;
+	phddctx->config->nChannelBondingMode5GHz =
+		sme_config->csrConfig.channelBondingMode5GHz;
+	phddctx->config->vhtChannelWidth = vhtchanwidth;
+	if (hdd_update_config_cfg(phddctx) == false) {
+		hdd_err("could not update config_dat");
+		retval = -EIO;
+		goto free;
+	}
+	if (band_5g) {
+		if (phddctx->config->nChannelBondingMode5GHz)
+			phddctx->wiphy->bands[HDD_NL80211_BAND_5GHZ]->ht_cap.cap
+				|= IEEE80211_HT_CAP_SUP_WIDTH_20_40;
+		else
+			phddctx->wiphy->bands[HDD_NL80211_BAND_5GHZ]->ht_cap.cap
+				&= ~IEEE80211_HT_CAP_SUP_WIDTH_20_40;
+	}
+
+	hdd_debug("New_Phymode= %d ch_bonding=%d band=%d VHT_ch_width=%u",
+		phymode, chwidth, curr_band, vhtchanwidth);
 
 free:
 	if (sme_config)
@@ -11103,7 +11113,7 @@ static int __iw_add_tspec(struct net_device *dev, struct iw_request_info *info,
 		return 0;
 	}
 	tSpec.ts_info.up = params[HDD_WLAN_WMM_PARAM_USER_PRIORITY];
-	if (0 > tSpec.ts_info.up || SME_QOS_WMM_UP_MAX < tSpec.ts_info.up) {
+	if (SME_QOS_WMM_UP_MAX < tSpec.ts_info.up) {
 		hdd_err("***ts_info.up out of bounds***");
 		return 0;
 	}
@@ -12265,9 +12275,7 @@ static int __iw_set_pno(struct net_device *dev,
 		   &offset) > 0)
 		ptr += offset;
 	if (request.fast_scan_max_cycles <
-			CFG_PNO_SCAN_TIMER_REPEAT_VALUE_MIN ||
-			request.fast_scan_max_cycles >
-			CFG_PNO_SCAN_TIMER_REPEAT_VALUE_MAX) {
+			CFG_PNO_SCAN_TIMER_REPEAT_VALUE_MIN) {
 		hdd_err("invalid fast scan max cycles %hhu",
 			request.fast_scan_max_cycles);
 		qdf_mem_free(data);
