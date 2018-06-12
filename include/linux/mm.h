@@ -446,7 +446,7 @@ static inline void *kvmalloc_array(size_t n, size_t size, gfp_t flags)
 	if (size != 0 && n > SIZE_MAX / size)
 		return NULL;
 
-	return kvmalloc(n * size, flags);
+	return kvmalloc_array(size, n, flags);
 }
 
 static inline unsigned long compound_lock_irqsave(struct page *page)
