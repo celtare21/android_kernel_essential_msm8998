@@ -1870,13 +1870,19 @@ static void mdss_dsi_start_wake_thread(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 			kthread_run_perf_critical(mdss_dsi_disp_wake_thread,
 						&ctrl_pdata->panel_data,
 						"mdss_disp_wake");
-	if (IS_ERR(ctrl_pdata->wake_thread))
+	if (IS_ERR(ctrl_pdata->wake_thread)) {
 		pr_err("%s: Failed to start disp-wake thread, rc=%ld\n",
 				__func__, PTR_ERR(ctrl_pdata->wake_thread));
+		ctrl_pdata->wake_thread = NULL;
+	}
 }
 
 static void mdss_dsi_display_wake(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 {
+	if (atomic_read(&ctrl_pdata->disp_is_on))
+		return;
+
+	atomic_set(&ctrl_pdata->disp_is_on, 1);
 	reinit_completion(&ctrl_pdata->wake_comp);
 
 	/* Make sure the thread is started since it's needed right now */
@@ -1899,9 +1905,7 @@ static int mdss_dsi_fb_unblank_cb(struct notifier_block *nb,
 	if (action != FB_EARLY_EVENT_BLANK)
 		return NOTIFY_OK;
 
-	ctrl_pdata->is_unblank = *blank == FB_BLANK_UNBLANK;
-
-	if (ctrl_pdata->is_unblank)
+	if (*blank == FB_BLANK_UNBLANK)
 		mdss_dsi_display_wake(ctrl_pdata);
 	else
 		mdss_dsi_start_wake_thread(ctrl_pdata);
@@ -2788,8 +2792,7 @@ static int mdss_dsi_event_handler(struct mdss_panel_data *pdata,
 		break;
 	case MDSS_EVENT_LINK_READY:
 		/* The disp_wake thread handles waking for unblank events */
-		if (!ctrl_pdata->is_unblank)
-			mdss_dsi_display_wake(ctrl_pdata);
+		mdss_dsi_display_wake(ctrl_pdata);
 		break;
 	case MDSS_EVENT_BLANK:
 		power_state = (int) (unsigned long) arg;
@@ -2802,6 +2805,7 @@ static int mdss_dsi_event_handler(struct mdss_panel_data *pdata,
 		if (ctrl_pdata->off_cmds.link_state == DSI_LP_MODE)
 			rc = mdss_dsi_blank(pdata, power_state);
 		rc = mdss_dsi_off(pdata, power_state);
+		atomic_set(&ctrl_pdata->disp_is_on, 0);
 		break;
 	case MDSS_EVENT_DISABLE_PANEL:
 		/* disable esd thread */
@@ -4004,7 +4008,7 @@ static int mdss_dsi_ctrl_remove(struct platform_device *pdev)
 		pr_err("%s: no driver data\n", __func__);
 		return -ENODEV;
 	}
-
+	fb_unregister_client(&ctrl_pdata->wake_notif);
 	mdss_dsi_pm_qos_remove_request(ctrl_pdata->shared_data);
 
 	if (msm_dss_config_vreg(&pdev->dev,
@@ -4553,10 +4557,6 @@ int dsi_panel_device_register(struct platform_device *ctrl_pdev,
 		pr_err("%s: unable to register MIPI DSI panel\n", __func__);
 		return rc;
 	}
-
-	ctrl_pdata->wake_notif.notifier_call = mdss_dsi_fb_unblank_cb;
-	ctrl_pdata->wake_notif.priority = INT_MAX - 1;
-	fb_register_client(&ctrl_pdata->wake_notif);
 
 	if (pinfo->pdest == DISPLAY_1) {
 		mdss_debug_register_io("dsi0_ctrl", &ctrl_pdata->ctrl_io, NULL);
