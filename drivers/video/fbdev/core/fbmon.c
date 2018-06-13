@@ -234,7 +234,7 @@ static void fix_edid(unsigned char *edid, int fix)
 				b[3] = 0xfd;
 				b[4] = 0x00;
 				b[5] = 60;   /* vfmin */
-				b[6] = 60;   /* vfmax */
+				b[6] = 120;   /* vfmax */
 				b[7] = 30;   /* hfmin */
 				b[8] = 75;   /* hfmax */
 				b[9] = 17;   /* pixclock - 170 MHz*/
