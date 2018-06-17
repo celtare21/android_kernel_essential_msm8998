@@ -2147,6 +2147,7 @@ QDF_STATUS send_set_mimops_cmd_tlv(wmi_unified_t wmi_handle,
 		break;
 	default:
 		WMI_LOGE("%s:INVALID Mimo PS CONFIG", __func__);
+		wmi_buf_free(buf);
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -4643,6 +4644,10 @@ QDF_STATUS send_roam_scan_offload_mode_cmd_tlv(wmi_unified_t wmi_handle,
 		       WMITLV_GET_STRUCT_TLVLEN
 			       (wmi_roam_scan_mode_fixed_param));
 
+	roam_scan_mode_fp->min_delay_roam_trigger_reason_bitmask =
+			roam_req->roam_trigger_reason_bitmask;
+	roam_scan_mode_fp->min_delay_btw_scans =
+			WMI_SEC_TO_MSEC(roam_req->min_delay_btw_roam_scans);
 	roam_scan_mode_fp->roam_scan_mode = roam_req->mode;
 	roam_scan_mode_fp->vdev_id = roam_req->vdev_id;
 	if (roam_req->mode == (WMI_ROAM_SCAN_MODE_NONE |
@@ -4678,6 +4683,8 @@ QDF_STATUS send_roam_scan_offload_mode_cmd_tlv(wmi_unified_t wmi_handle,
 		roam_offload_params->rssi_cat_gap = roam_req->roam_rssi_cat_gap;
 		roam_offload_params->select_5g_margin =
 			roam_req->select_5ghz_margin;
+		roam_offload_params->handoff_delay_for_rx =
+			roam_req->roam_offload_params.ho_delay_for_rx;
 		roam_offload_params->reassoc_failure_timeout =
 			roam_req->reassoc_failure_timeout;
 
@@ -13873,6 +13880,11 @@ wmi_fill_oui_extensions_buffer(struct wmi_action_oui_extension *extension,
 	uint8_t i;
 
 	for (i = 0; i < (uint8_t)no_oui_extns; i++) {
+		if ((rem_var_buf_len - cmd_ext->buf_data_length) < 0) {
+			WMI_LOGE(FL("Invalid action oui command length"));
+			return QDF_STATUS_E_INVAL;
+		}
+
 		var_buf[0] = i;
 		var_buf++;
 

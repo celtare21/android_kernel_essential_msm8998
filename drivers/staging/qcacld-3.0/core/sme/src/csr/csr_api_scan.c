@@ -3128,10 +3128,13 @@ static void csr_check_n_save_wsc_ie(tpAniSirGlobal pMac,
 			    (0x00 == pbIe[2]) && (0x50 == pbIe[3])
 			    && (0xf2 == pbIe[4]) && (0x04 == pbIe[5])) {
 				/* Founrd it */
-				qdf_mem_copy(pNewBssDescr->
-				     	WscIeProbeRsp, pbIe,
-					     pbIe[1] + 2);
-				pNewBssDescr->WscIeLen = pbIe[1] + 2;
+				if ((DOT11F_IE_WSCPROBERES_MAX_LEN - 2) >=
+				    pbIe[1]) {
+					qdf_mem_copy(pNewBssDescr->
+						     WscIeProbeRsp, pbIe,
+						     pbIe[1] + 2);
+					pNewBssDescr->WscIeLen = pbIe[1] + 2;
+				}
 				break;
 			}
 			idx += pbIe[1] + 2;

@@ -1294,6 +1294,8 @@ QDF_STATUS ol_download_firmware(struct ol_context *ol_ctx)
 		if (status == EOK) {
 			param = 0;
 			bmi_execute(address, &param, ol_ctx);
+		} else if (status < 0) {
+			return status;
 		}
 	}
 

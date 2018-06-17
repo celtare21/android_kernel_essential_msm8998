@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2018 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -1062,8 +1062,9 @@ bool lim_process_fils_auth_frame2(tpAniSirGlobal mac_ctx,
 		tpPESession pe_session,
 		tSirMacAuthFrameBody *rx_auth_frm_body)
 {
-	bool pmkid_found = false;
 	int i;
+	uint32_t ret;
+	bool pmkid_found = false;
 	tDot11fIERSN dot11f_ie_rsn = {0};
 
 	if (rx_auth_frm_body->authAlgoNumber != eSIR_FILS_SK_WITHOUT_PFS)
@@ -1072,10 +1073,14 @@ bool lim_process_fils_auth_frame2(tpAniSirGlobal mac_ctx,
 	if (!pe_session->fils_info)
 		return false;
 
-	dot11f_unpack_ie_rsn(mac_ctx,
-				&rx_auth_frm_body->rsn_ie.info[0],
-				rx_auth_frm_body->rsn_ie.length,
-				&dot11f_ie_rsn, 0);
+	ret = dot11f_unpack_ie_rsn(mac_ctx,
+				   &rx_auth_frm_body->rsn_ie.info[0],
+				   rx_auth_frm_body->rsn_ie.length,
+				   &dot11f_ie_rsn, 0);
+	if (!DOT11F_SUCCEEDED(ret)) {
+		pe_err("unpack failed, ret: %d", ret);
+		return false;
+	}
 
 	for (i = 0; i < dot11f_ie_rsn.pmkid_count; i++) {
 		if (qdf_mem_cmp(dot11f_ie_rsn.pmkid[i],
@@ -1220,6 +1225,10 @@ uint32_t lim_create_fils_auth_data(tpAniSirGlobal mac_ctx,
 		/* Calculate data/length for FILS Wrapped Data */
 		wrapped_data_len =
 			lim_create_fils_wrapper_data(session->fils_info);
+		if (wrapped_data_len < 0) {
+			pe_err("failed to create warpped data");
+			return 0;
+		}
 		frame_len += wrapped_data_len + EXTENDED_IE_HEADER_LEN;
 	}
 	return frame_len;

@@ -1299,7 +1299,7 @@ QDF_STATUS hdd_wmm_adapter_init(hdd_adapter_t *pAdapter)
 	INIT_LIST_HEAD(&pAdapter->hddWmmStatus.wmmContextList);
 	mutex_init(&pAdapter->hddWmmStatus.wmmLock);
 
-	for (acType = 0; acType < (sme_ac_enum_type) WLAN_MAX_AC; acType++) {
+	for (acType = 0; acType < WLAN_MAX_AC; acType++) {
 		pAcStatus = &pAdapter->hddWmmStatus.wmmAcStatus[acType];
 		pAcStatus->wmmAcAccessRequired = false;
 		pAcStatus->wmmAcAccessNeeded = false;
@@ -1332,7 +1332,7 @@ QDF_STATUS hdd_wmm_adapter_clear(hdd_adapter_t *pAdapter)
 	sme_ac_enum_type acType;
 
 	ENTER();
-	for (acType = 0; acType < (sme_ac_enum_type) WLAN_MAX_AC; acType++) {
+	for (acType = 0; acType < WLAN_MAX_AC; acType++) {
 		pAcStatus = &pAdapter->hddWmmStatus.wmmAcStatus[acType];
 		pAcStatus->wmmAcAccessRequired = false;
 		pAcStatus->wmmAcAccessNeeded = false;
