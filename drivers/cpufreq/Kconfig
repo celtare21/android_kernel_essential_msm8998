@@ -285,7 +285,7 @@ config INPUT_BOOST_DURATION_MS
 
 config WAKE_BOOST_DURATION_MS
 	int "Wake boost duration"
-	default "1000"
+	default "400"
 	help
 	  Wake boost duration in milliseconds.
 
