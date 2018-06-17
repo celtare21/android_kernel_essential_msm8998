@@ -172,7 +172,7 @@ qdf_export_symbol(qdf_trace_set_level);
  */
 void qdf_trace_set_module_trace_level(QDF_MODULE_ID module, uint32_t level)
 {
-	if (module >= QDF_MODULE_ID_MAX) {
+	if (module < 0 || module >= QDF_MODULE_ID_MAX) {
 		pr_err("%s: Invalid module id %d passed\n", __func__, module);
 		return;
 	}
@@ -192,14 +192,14 @@ void qdf_trace_set_value(QDF_MODULE_ID module, QDF_TRACE_LEVEL level,
 			 uint8_t on)
 {
 	/* make sure the caller is passing in a valid LEVEL */
-	if (level >= QDF_TRACE_LEVEL_MAX) {
+	if (level < 0 || level >= QDF_TRACE_LEVEL_MAX) {
 		pr_err("%s: Invalid trace level %d passed in!\n", __func__,
 		       level);
 		return;
 	}
 
 	/* make sure the caller is passing in a valid module */
-	if (module >= QDF_MODULE_ID_MAX) {
+	if (module < 0 || module >= QDF_MODULE_ID_MAX) {
 		pr_err("%s: Invalid module id %d passed in!\n", __func__,
 		       module);
 		return;
