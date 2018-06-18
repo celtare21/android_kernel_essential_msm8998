@@ -1829,6 +1829,11 @@ lim_send_assoc_req_mgmt_frame(tpAniSirGlobal mac_ctx,
 		frm->vendor_vht_ie.sub_type =
 			pe_session->vendor_specific_vht_ie_sub_type;
 		frm->vendor_vht_ie.VHTCaps.present = 1;
+		if (!mac_ctx->roam.configParam.enable_subfee_vendor_vhtie &&
+		    pe_session->vht_config.su_beam_formee) {
+			pe_debug("Disable SU beamformee for vendor IE");
+			pe_session->vht_config.su_beam_formee = 0;
+		}
 		populate_dot11f_vht_caps(mac_ctx, pe_session,
 				&frm->vendor_vht_ie.VHTCaps);
 		vht_enabled = true;
@@ -2076,7 +2081,8 @@ static QDF_STATUS lim_auth_tx_complete_cnf(tpAniSirGlobal mac_ctx,
 	uint16_t auth_ack_status;
 	uint16_t reason_code;
 
-	pe_debug("tx_complete= %d", tx_complete);
+	pe_debug("tx_complete = %d %s", tx_complete,
+		(tx_complete ? "success":"fail"));
 	if (tx_complete) {
 		mac_ctx->auth_ack_status = LIM_AUTH_ACK_RCD_SUCCESS;
 		auth_ack_status = ACKED;
@@ -2653,6 +2659,7 @@ lim_send_disassoc_mgmt_frame(tpAniSirGlobal pMac,
 	uint8_t txFlag = 0;
 	uint32_t val = 0;
 	uint8_t smeSessionId = 0;
+
 	if (NULL == psessionEntry) {
 		return;
 	}
