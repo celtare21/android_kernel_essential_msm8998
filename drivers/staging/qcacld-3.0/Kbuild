@@ -1224,6 +1224,8 @@ EXTRA_CFLAGS += \
 	-Wno-parentheses-equality \
 	-Wno-logical-not-parentheses \
 	-Wno-enum-conversion \
+	-Wno-incompatible-pointer-types \
+
 
 CDEFINES :=	-DANI_LITTLE_BYTE_ENDIAN \
 		-DANI_LITTLE_BIT_ENDIAN \
