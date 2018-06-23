@@ -101,7 +101,7 @@ int sysctl_tcp_thin_dupack __read_mostly;
 
 int sysctl_tcp_moderate_rcvbuf __read_mostly = 1;
 int sysctl_tcp_early_retrans __read_mostly = 3;
-int sysctl_tcp_invalid_ratelimit __read_mostly = HZ/2;
+int sysctl_tcp_invalid_ratelimit __read_mostly = 100/2;
 int sysctl_tcp_default_init_rwnd __read_mostly = TCP_INIT_CWND * 2;
 
 #define FLAG_DATA		0x01 /* Incoming frame contained data.		*/
@@ -2900,7 +2900,7 @@ static void tcp_fastretrans_alert(struct sock *sk, const int acked,
  */
 static void tcp_update_rtt_min(struct sock *sk, u32 rtt_us)
 {
-	const u32 now = tcp_time_stamp, wlen = sysctl_tcp_min_rtt_wlen * HZ;
+	const u32 now = tcp_time_stamp, wlen = sysctl_tcp_min_rtt_wlen * 100;
 	struct rtt_meas *m = tcp_sk(sk)->rtt_min;
 	struct rtt_meas rttm = { .rtt = (rtt_us ? : 1), .ts = now };
 	u32 elapsed;
@@ -3444,7 +3444,7 @@ static void tcp_send_challenge_ack(struct sock *sk, const struct sk_buff *skb)
 		return;
 
 	/* Then check host-wide RFC 5961 rate limit. */
-	now = jiffies / HZ;
+	now = jiffies / 100;
 	if (now != challenge_timestamp) {
 		u32 half = (sysctl_tcp_challenge_ack_limit + 1) >> 1;
 
@@ -3917,7 +3917,7 @@ EXPORT_SYMBOL(tcp_parse_md5sig_option);
  * states that events when retransmit arrives after original data are rare.
  * It is a blatant lie. VJ forgot about fast retransmit! 8)8) It is
  * the biggest problem on large power networks even with minor reordering.
- * OK, let's give it small replay window. If peer clock is even 1hz, it is safe
+ * OK, let's give it small replay window. If peer clock is even 1100, it is safe
  * up to bandwidth of 18Gigabit/sec. 8) ]
  */
 
@@ -3938,7 +3938,7 @@ static int tcp_disordered_ack(const struct sock *sk, const struct sk_buff *skb)
 		!tcp_may_update_window(tp, ack, seq, ntohs(th->window) << tp->rx_opt.snd_wscale) &&
 
 		/* 4. ... and sits in replay window. */
-		(s32)(tp->rx_opt.ts_recent - tp->rx_opt.rcv_tsval) <= (inet_csk(sk)->icsk_rto * 1024) / HZ);
+		(s32)(tp->rx_opt.ts_recent - tp->rx_opt.rcv_tsval) <= (inet_csk(sk)->icsk_rto * 1024) / 100);
 }
 
 static inline bool tcp_paws_discard(const struct sock *sk,
