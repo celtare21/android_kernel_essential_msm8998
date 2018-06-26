@@ -1647,10 +1647,13 @@ static int do_execveat_common(int fd, struct filename *filename,
 	if (retval < 0)
 		goto out;
 
-	if (!strcmp(filename->name, ZYGOTE32_BIN))
-		atomic_set(&zygote32_pid, current->pid);
-	else if (!strcmp(filename->name, ZYGOTE64_BIN))
-		atomic_set(&zygote64_pid, current->pid);
+	if (capable(CAP_SYS_ADMIN)) {
+		if (unlikely(!strcmp(filename->name, ZYGOTE32_BIN)))
+			atomic_set(&zygote32_pid, current->pid);
+		else if (unlikely(!strcmp(filename->name, ZYGOTE64_BIN)))
+			atomic_set(&zygote64_pid, current->pid);
+	}
+
 
 	/* execve succeeded */
 	current->fs->in_exec = 0;
