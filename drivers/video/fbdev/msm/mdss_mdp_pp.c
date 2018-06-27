@@ -1939,16 +1939,16 @@ void mdss_mdp_pipe_pp_clear(struct mdss_mdp_pipe *pipe)
 		pp_hist_disable(hist_info);
 	}
 
-	kfree(pipe->pp_res.pa_cfg_payload);
+	kvfree(pipe->pp_res.pa_cfg_payload);
 	pipe->pp_res.pa_cfg_payload = NULL;
 	pipe->pp_cfg.pa_v2_cfg_data.cfg_payload = NULL;
-	kfree(pipe->pp_res.igc_cfg_payload);
+	kvfree(pipe->pp_res.igc_cfg_payload);
 	pipe->pp_res.igc_cfg_payload = NULL;
 	pipe->pp_cfg.igc_cfg.cfg_payload = NULL;
-	kfree(pipe->pp_res.pcc_cfg_payload);
+	kvfree(pipe->pp_res.pcc_cfg_payload);
 	pipe->pp_res.pcc_cfg_payload = NULL;
 	pipe->pp_cfg.pcc_cfg_data.cfg_payload = NULL;
-	kfree(pipe->pp_res.hist_lut_cfg_payload);
+	kvfree(pipe->pp_res.hist_lut_cfg_payload);
 	pipe->pp_res.hist_lut_cfg_payload = NULL;
 	pipe->pp_cfg.hist_lut_cfg.cfg_payload = NULL;
 
@@ -4851,7 +4851,7 @@ int mdss_mdp_gamut_config(struct msm_fb_data_type *mfd,
 			addr += 4;
 			ret = copy_to_user(config->r_tbl[i], r_tbl[i],
 				     sizeof(uint16_t) * config->tbl_size[i]);
-			kfree(r_tbl[i]);
+			kvfree(r_tbl[i]);
 			if (ret) {
 				pr_err("%s: copy tbl to usr failed\n",
 					__func__);
@@ -4875,7 +4875,7 @@ int mdss_mdp_gamut_config(struct msm_fb_data_type *mfd,
 			addr += 4;
 			ret = copy_to_user(config->g_tbl[i], g_tbl[i],
 				     sizeof(uint16_t) * config->tbl_size[i]);
-			kfree(g_tbl[i]);
+			kvfree(g_tbl[i]);
 			if (ret) {
 				pr_err("%s: copy tbl to usr failed\n",
 					__func__);
@@ -4899,7 +4899,7 @@ int mdss_mdp_gamut_config(struct msm_fb_data_type *mfd,
 			addr += 4;
 			ret = copy_to_user(config->b_tbl[i], b_tbl[i],
 				     sizeof(uint16_t) * config->tbl_size[i]);
-			kfree(b_tbl[i]);
+			kvfree(b_tbl[i]);
 			if (ret) {
 				pr_err("%s: copy tbl to usr failed\n",
 					__func__);
@@ -5659,7 +5659,7 @@ int mdss_mdp_hist_collect(struct mdp_histogram_data *hist)
 	ret = copy_to_user(hist->c0, hist_data_addr, sizeof(u32) *
 								hist->bin_cnt);
 hist_collect_exit:
-	kfree(hist_concat);
+	kvfree(hist_concat);
 
 	return ret;
 }
@@ -7216,7 +7216,7 @@ int mdss_mdp_calib_config_buffer(struct mdp_calib_config_buffer *cfg,
 	}
 
 	if (copy_from_user(buff, cfg->buffer, cfg->size)) {
-		kfree(buff);
+		kvfree(buff);
 		pr_err("config buffer copy failed\n");
 		return ret;
 	}
@@ -7248,7 +7248,7 @@ int mdss_mdp_calib_config_buffer(struct mdp_calib_config_buffer *cfg,
 
 	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_OFF);
 
-	kfree(buff_org);
+	kvfree(buff_org);
 	return ret;
 }
 
@@ -7603,13 +7603,13 @@ int mdss_mdp_copy_layer_pp_info(struct mdp_input_layer *layer)
 	return ret;
 
 exit_pa:
-	kfree(pp_info->pa_v2_cfg_data.cfg_payload);
+	kvfree(pp_info->pa_v2_cfg_data.cfg_payload);
 exit_hist_lut:
-	kfree(pp_info->hist_lut_cfg.cfg_payload);
+	kvfree(pp_info->hist_lut_cfg.cfg_payload);
 exit_igc:
-	kfree(pp_info->igc_cfg.cfg_payload);
+	kvfree(pp_info->igc_cfg.cfg_payload);
 exit_pp_info:
-	kfree(pp_info);
+	kvfree(pp_info);
 	return ret;
 }
 
@@ -7621,11 +7621,11 @@ void mdss_mdp_free_layer_pp_info(struct mdp_input_layer *layer)
 	if (!pp_info)
 		return;
 
-	kfree(pp_info->igc_cfg.cfg_payload);
-	kfree(pp_info->hist_lut_cfg.cfg_payload);
-	kfree(pp_info->pa_v2_cfg_data.cfg_payload);
-	kfree(pp_info->pcc_cfg_data.cfg_payload);
-	kfree(pp_info);
+	kvfree(pp_info->igc_cfg.cfg_payload);
+	kvfree(pp_info->hist_lut_cfg.cfg_payload);
+	kvfree(pp_info->pa_v2_cfg_data.cfg_payload);
+	kvfree(pp_info->pcc_cfg_data.cfg_payload);
+	kvfree(pp_info);
 	layer->pp_info = NULL;
 }
 

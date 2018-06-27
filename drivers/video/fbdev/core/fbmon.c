@@ -402,7 +402,7 @@ static void calc_mode_timings(int xres, int yres, int refresh,
 		mode->vsync_len = var->vsync_len;
 		mode->vmode = 0;
 		mode->sync = 0;
-		kfree(var);
+		kvfree(var);
 	}
 }
 
@@ -626,7 +626,7 @@ static struct fb_videomode *fb_create_modedb(unsigned char *edid, int *dbsize,
 
 	if (edid == NULL || !edid_checksum(edid) ||
 	    !edid_check_header(edid)) {
-		kfree(mode);
+		kvfree(mode);
 		return NULL;
 	}
 
@@ -666,16 +666,16 @@ static struct fb_videomode *fb_create_modedb(unsigned char *edid, int *dbsize,
 
 	/* Yikes, EDID data is totally useless */
 	if (!num) {
-		kfree(mode);
+		kvfree(mode);
 		return NULL;
 	}
 
 	*dbsize = num;
-	m = kmalloc(num * sizeof(struct fb_videomode), GFP_KERNEL);
+	m = kvmalloc(num * sizeof(struct fb_videomode), GFP_KERNEL);
 	if (!m)
 		return mode;
 	memmove(m, mode, num * sizeof(struct fb_videomode));
-	kfree(mode);
+	kvfree(mode);
 	return m;
 }
 
@@ -688,7 +688,7 @@ static struct fb_videomode *fb_create_modedb(unsigned char *edid, int *dbsize,
  */
 void fb_destroy_modedb(struct fb_videomode *modedb)
 {
-	kfree(modedb);
+	kvfree(modedb);
 }
 
 static int fb_get_monitor_limits(unsigned char *edid, struct fb_monspecs *specs)
@@ -1083,7 +1083,7 @@ void fb_edid_add_monspecs(unsigned char *edid, struct fb_monspecs *specs)
 		}
 	}
 
-	kfree(specs->modedb);
+	kvfree(specs->modedb);
 	specs->modedb = m;
 	specs->modedb_len = specs->modedb_len + num + svd_n;
 }
@@ -1392,7 +1392,7 @@ int fb_get_mode(int flags, u32 val, struct fb_var_screeninfo *var, struct fb_inf
 			(var->vsync_len + var->lower_margin);
 	}
 
-	kfree(timings);
+	kvfree(timings);
 	return err;
 }
 

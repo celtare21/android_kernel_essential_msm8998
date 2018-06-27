@@ -780,14 +780,14 @@ static ssize_t mdss_dsi_cmd_state_write(struct file *file,
 		return -EINVAL;
 	}
 
-	input = kmalloc(count, GFP_KERNEL);
+	input = kvmalloc(count, GFP_KERNEL);
 	if (!input) {
 		pr_err("%s: Failed to allocate memory\n", __func__);
 		return -ENOMEM;
 	}
 
 	if (copy_from_user(input, p, count)) {
-		kfree(input);
+		kvfree(input);
 		return -EFAULT;
 	}
 	input[count-1] = '\0';
@@ -797,7 +797,7 @@ static ssize_t mdss_dsi_cmd_state_write(struct file *file,
 	else
 		*link_state = DSI_LP_MODE;
 
-	kfree(input);
+	kvfree(input);
 	return count;
 }
 
@@ -823,7 +823,7 @@ static ssize_t mdss_dsi_cmd_read(struct file *file, char __user *buf,
 
 	mutex_lock(&pcmds->dbg_mutex);
 	if (*ppos == 0) {
-		kfree(pcmds->string_buf);
+		kvfree(pcmds->string_buf);
 		pcmds->string_buf = NULL;
 		pcmds->sblen = 0;
 	}
@@ -837,7 +837,7 @@ static ssize_t mdss_dsi_cmd_read(struct file *file, char __user *buf,
 		int blen = 0;
 		char *buffer;
 
-		buffer = kmalloc(bsize, GFP_KERNEL);
+		buffer = kvmalloc(bsize, GFP_KERNEL);
 		if (!buffer) {
 			pr_err("%s: Failed to allocate memory\n", __func__);
 			mutex_unlock(&pcmds->dbg_mutex);
@@ -873,7 +873,7 @@ static ssize_t mdss_dsi_cmd_read(struct file *file, char __user *buf,
 	 * It may need multiple times of reading if string buf is too large
 	 */
 	if (*ppos >= (pcmds->sblen)) {
-		kfree(pcmds->string_buf);
+		kvfree(pcmds->string_buf);
 		pcmds->string_buf = NULL;
 		pcmds->sblen = 0;
 		mutex_unlock(&pcmds->dbg_mutex);
@@ -895,7 +895,7 @@ static ssize_t mdss_dsi_cmd_write(struct file *file, const char __user *p,
 
 	mutex_lock(&pcmds->dbg_mutex);
 	if (*ppos == 0) {
-		kfree(pcmds->string_buf);
+		kvfree(pcmds->string_buf);
 		pcmds->string_buf = NULL;
 		pcmds->sblen = 0;
 	}
@@ -946,7 +946,7 @@ static int mdss_dsi_cmd_flush(struct file *file, fl_owner_t id)
 	buf = kzalloc(blen, GFP_KERNEL);
 	if (!buf) {
 		pr_err("%s: Failed to allocate memory\n", __func__);
-		kfree(pcmds->string_buf);
+		kvfree(pcmds->string_buf);
 		pcmds->string_buf = NULL;
 		pcmds->sblen = 0;
 		mutex_unlock(&pcmds->dbg_mutex);
@@ -973,7 +973,7 @@ static int mdss_dsi_cmd_flush(struct file *file, fl_owner_t id)
 		if (dchdr->dlen > len || dchdr->dlen < 0) {
 			pr_err("%s: dtsi cmd=%x error, len=%d\n",
 				__func__, dchdr->dtype, dchdr->dlen);
-			kfree(buf);
+			kvfree(buf);
 			mutex_unlock(&pcmds->dbg_mutex);
 			return -EINVAL;
 		}
@@ -985,7 +985,7 @@ static int mdss_dsi_cmd_flush(struct file *file, fl_owner_t id)
 	if (len != 0) {
 		pr_err("%s: dcs_cmd=%x len=%d error!\n", __func__,
 				bp[0], len);
-		kfree(buf);
+		kvfree(buf);
 		mutex_unlock(&pcmds->dbg_mutex);
 		return -EINVAL;
 	}
@@ -995,7 +995,7 @@ static int mdss_dsi_cmd_flush(struct file *file, fl_owner_t id)
 		pcmds->blen = blen;
 		pcmds->sync_flag = 0;
 	} else {
-		kfree(pcmds->buf);
+		kvfree(pcmds->buf);
 		pcmds->buf = buf;
 		pcmds->blen = blen;
 	}
@@ -1048,7 +1048,7 @@ static int mdss_dsi_debugfs_setup(struct mdss_panel_data *pdata,
 	if (IS_ERR_OR_NULL(dfs->root)) {
 		pr_err("%s: debugfs_create_dir dsi fail, error %ld\n",
 			__func__, PTR_ERR(dfs->root));
-		kfree(dfs);
+		kvfree(dfs);
 		return -ENODEV;
 	}
 
@@ -1119,7 +1119,7 @@ static void mdss_dsi_debugfs_cleanup(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 		struct mdss_dsi_debugfs_info *dfs = ctrl->debugfs_info;
 		if (dfs && dfs->root)
 			debugfs_remove_recursive(dfs->root);
-		kfree(dfs);
+		kvfree(dfs);
 		pdata = pdata->next;
 	} while (pdata);
 	pr_debug("%s: Cleaned up mdss_dsi_debugfs_info\n", __func__);
@@ -1164,8 +1164,8 @@ static int _mdss_dsi_refresh_cmd(struct buf_data *new_cmds,
 		pr_err("%s: Failed to allocate memory\n", __func__);
 		return -ENOMEM;
 	}
-	kfree(original_pcmds->buf);
-	kfree(original_pcmds->cmds);
+	kvfree(original_pcmds->buf);
+	kvfree(original_pcmds->cmds);
 	original_pcmds->cmd_cnt = cnt;
 	original_pcmds->cmds = cmds;
 	original_pcmds->buf = new_cmds->buf;

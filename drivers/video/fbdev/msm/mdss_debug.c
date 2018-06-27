@@ -97,7 +97,7 @@ static int panel_debug_base_release(struct inode *inode, struct file *file)
 	struct mdss_debug_base *dbg = file->private_data;
 	mutex_lock(&mdss_debug_lock);
 	if (dbg && dbg->buf) {
-		kfree(dbg->buf);
+		kvfree(dbg->buf);
 		dbg->buf_len = 0;
 		dbg->buf = NULL;
 	}
@@ -314,16 +314,16 @@ static ssize_t panel_debug_base_reg_read(struct file *file,
 			|| (copy_to_user(user_buf, panel_reg_buf, len)))
 		goto read_reg_fail;
 
-	kfree(rx_buf);
-	kfree(panel_reg_buf);
+	kvfree(rx_buf);
+	kvfree(panel_reg_buf);
 
 	*ppos += len;	/* increase offset */
 	mutex_unlock(&mdss_debug_lock);
 	return len;
 
 read_reg_fail:
-	kfree(rx_buf);
-	kfree(panel_reg_buf);
+	kvfree(rx_buf);
+	kvfree(panel_reg_buf);
 	mutex_unlock(&mdss_debug_lock);
 	return rc;
 }
@@ -408,7 +408,7 @@ reg_fail:
 off_fail:
 	debugfs_remove(ent_type);
 type_fail:
-	kfree(dbg);
+	kvfree(dbg);
 	return -ENODEV;
 }
 
@@ -425,7 +425,7 @@ static int mdss_debug_base_release(struct inode *inode, struct file *file)
 	struct mdss_debug_base *dbg = file->private_data;
 	mutex_lock(&mdss_debug_lock);
 	if (dbg && dbg->buf) {
-		kfree(dbg->buf);
+		kvfree(dbg->buf);
 		dbg->buf_len = 0;
 		dbg->buf = NULL;
 	}
@@ -698,7 +698,7 @@ int mdss_debug_register_base(const char *name, void __iomem *base,
 reg_fail:
 	debugfs_remove(ent_off);
 off_fail:
-	kfree(dbg);
+	kvfree(dbg);
 	return -ENODEV;
 }
 
@@ -779,7 +779,7 @@ static int parse_dt_xlog_dump_list(const u32 *arr, int count,
 		list_add_tail(&xlog_node->head, xlog_dump_list);
 	}
 
-	kfree(offsets);
+	kvfree(offsets);
 	return 0;
 }
 
@@ -1070,13 +1070,13 @@ static int mdss_debugfs_cleanup(struct mdss_debug_data *mdd)
 
 	list_for_each_entry_safe(base, tmp, &mdd->base_list, head) {
 		list_del(&base->head);
-		kfree(base);
+		kvfree(base);
 	}
 
 	if (mdd->root)
 		debugfs_remove_recursive(mdd->root);
 
-	kfree(mdd);
+	kvfree(mdd);
 
 	return 0;
 }

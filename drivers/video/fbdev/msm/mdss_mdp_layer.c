@@ -2759,7 +2759,7 @@ validate_exit:
 	}
 	mutex_unlock(&mdp5_data->list_lock);
 end:
-	kfree(validate_info_list);
+	kvfree(validate_info_list);
 	mutex_unlock(&mdp5_data->ov_lock);
 
 	pr_debug("fb%d validated layers =%d\n", mfd->index, i);
@@ -2946,7 +2946,7 @@ map_err:
 		mutex_unlock(&mdp5_data->list_lock);
 	}
 end:
-	kfree(validate_info_list);
+	kvfree(validate_info_list);
 
 	return ret;
 }
@@ -3063,7 +3063,7 @@ int mdss_mdp_layer_pre_commit_cwb(struct msm_fb_data_type *mfd,
 	rc = mdss_mdp_wb_import_data(&mfd->pdev->dev, cwb_data);
 	if (rc) {
 		pr_err("failed to import data for cwb\n");
-		kfree(cwb_data);
+		kvfree(cwb_data);
 		return rc;
 	}
 

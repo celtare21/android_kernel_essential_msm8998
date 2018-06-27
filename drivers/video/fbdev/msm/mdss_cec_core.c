@@ -143,7 +143,7 @@ static int cec_disable(struct cec_ctl *ctl)
 	spin_lock_irqsave(&ctl->lock, flags);
 	list_for_each_entry_safe(msg_node, tmp, &ctl->msg_head, list) {
 		list_del(&msg_node->list);
-		kfree(msg_node);
+		kvfree(msg_node);
 	}
 	spin_unlock_irqrestore(&ctl->lock, flags);
 
@@ -375,7 +375,7 @@ static int cec_msg_recv(void *data, struct cec_msg *msg)
 		if (ret)
 			pr_err("msg parsing failed\n");
 
-		kfree(msg_node);
+		kvfree(msg_node);
 	} else {
 		list_add_tail(&msg_node->list, &ctl->msg_head);
 		spin_unlock_irqrestore(&ctl->lock, flags);
@@ -640,7 +640,7 @@ static ssize_t cec_rda_msg(struct device *dev,
 		memcpy(buf + (i * sizeof(struct cec_msg)), &msg_node->msg,
 			sizeof(struct cec_msg));
 		list_del(&msg_node->list);
-		kfree(msg_node);
+		kvfree(msg_node);
 		i++;
 	}
 
@@ -738,7 +738,7 @@ int cec_abstract_deinit(void *input)
 
 	sysfs_remove_group(ctl->init_data.kobj, &cec_fs_attr_group);
 
-	kfree(ctl);
+	kvfree(ctl);
 
 	return 0;
 }
@@ -793,7 +793,7 @@ void *cec_abstract_init(struct cec_abstract_init_data *init_data)
 
 	return ctl;
 end:
-	kfree(ctl);
+	kvfree(ctl);
 	return ERR_PTR(ret);
 }
 

@@ -1223,7 +1223,7 @@ static void mdss_mdp_overlay_buf_deinit(struct msm_fb_data_type *mfd)
 
 	list_for_each_entry_safe(buf, t, &mdp5_data->bufs_chunks, chunk_list) {
 		list_del(&buf->chunk_list);
-		kfree(buf);
+		kvfree(buf);
 	}
 }
 
@@ -3025,7 +3025,7 @@ static int mdss_mdp_overlay_get_fb_pipe(struct msm_fb_data_type *mfd,
 	*ppipe = pipe;
 
 done:
-	kfree(req);
+	kvfree(req);
 	return ret;
 }
 
@@ -4600,7 +4600,7 @@ done:
 		mdss_mdp_curor_pipe_cleanup(mfd, CURSOR_PIPE_RIGHT);
 	}
 
-	kfree(req);
+	kvfree(req);
 	mutex_unlock(&mdp5_data->ov_lock);
 	return ret;
 }
@@ -5250,7 +5250,7 @@ static int __handle_overlay_prepare(struct msm_fb_data_type *mfd,
 		ret = __mdss_overlay_src_split_sort(mfd, sorted_ovs, num_ovs);
 		if (ret) {
 			pr_err("src_split_sort failed. ret=%d\n", ret);
-			kfree(sorted_ovs);
+			kvfree(sorted_ovs);
 			return ret;
 		}
 	}
@@ -5349,7 +5349,7 @@ validate_exit:
 	}
 	mutex_unlock(&mdp5_data->ov_lock);
 
-	kfree(sorted_ovs);
+	kvfree(sorted_ovs);
 
 	return ret;
 }
@@ -5373,7 +5373,7 @@ static int __handle_ioctl_overlay_prepare(struct msm_fb_data_type *mfd,
 		return -EINVAL;
 	}
 
-	overlays = kmalloc(ovlist.num_overlays * sizeof(*overlays), GFP_KERNEL);
+	overlays = kvmalloc(ovlist.num_overlays * sizeof(*overlays), GFP_KERNEL);
 	if (!overlays) {
 		pr_err("Unable to allocate memory for overlays\n");
 		return -ENOMEM;
@@ -5409,7 +5409,7 @@ static int __handle_ioctl_overlay_prepare(struct msm_fb_data_type *mfd,
 		ret = -EFAULT;
 
 validate_exit:
-	kfree(overlays);
+	kvfree(overlays);
 
 	return ret;
 }
@@ -5455,7 +5455,7 @@ static int mdss_mdp_overlay_ioctl_handler(struct msm_fb_data_type *mfd,
 		break;
 
 	case MSMFB_OVERLAY_GET:
-		req = kmalloc(sizeof(struct mdp_overlay), GFP_KERNEL);
+		req = kvmalloc(sizeof(struct mdp_overlay), GFP_KERNEL);
 		if (!req)
 			return -ENOMEM;
 		ret = copy_from_user(req, argp, sizeof(*req));
@@ -5471,7 +5471,7 @@ static int mdss_mdp_overlay_ioctl_handler(struct msm_fb_data_type *mfd,
 		break;
 
 	case MSMFB_OVERLAY_SET:
-		req = kmalloc(sizeof(struct mdp_overlay), GFP_KERNEL);
+		req = kvmalloc(sizeof(struct mdp_overlay), GFP_KERNEL);
 		if (!req)
 			return -ENOMEM;
 		ret = copy_from_user(req, argp, sizeof(*req));
@@ -5551,7 +5551,7 @@ static int mdss_mdp_overlay_ioctl_handler(struct msm_fb_data_type *mfd,
 		break;
 	}
 
-	kfree(req);
+	kvfree(req);
 	return ret;
 }
 
@@ -6202,7 +6202,7 @@ static void __cwb_wq_handler(struct work_struct *cwb_work)
 		return;
 	}
 	mdss_mdp_data_free(&cwb_data->data, true, DMA_FROM_DEVICE);
-	kfree(cwb_data);
+	kvfree(cwb_data);
 }
 
 static int __vsync_set_vsync_handler(struct msm_fb_data_type *mfd)
@@ -6612,7 +6612,7 @@ int mdss_mdp_overlay_init(struct msm_fb_data_type *mfd)
 		pr_warn("Failed to initialize pp overlay data.\n");
 	return rc;
 init_fail:
-	kfree(mdp5_data);
+	kvfree(mdp5_data);
 	return rc;
 }
 

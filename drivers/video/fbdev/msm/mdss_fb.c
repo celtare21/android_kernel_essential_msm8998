@@ -1044,7 +1044,7 @@ static int mdss_fb_input_connect(struct input_handler *handler,
 error_unregister:
 	input_unregister_handle(handle);
 error:
-	kfree(handle);
+	kvfree(handle);
 	return rc;
 }
 
@@ -1052,7 +1052,7 @@ static void mdss_fb_input_disconnect(struct input_handle *handle)
 {
 	input_close_device(handle);
 	input_unregister_handle(handle);
-	kfree(handle);
+	kvfree(handle);
 }
 
 /*
@@ -1093,7 +1093,7 @@ static int mdss_fb_register_input_handler(struct msm_fb_data_type *mfd)
 	rc = input_register_handler(handler);
 	if (rc) {
 		pr_err("Unable to register the input handler\n");
-		kfree(handler);
+		kvfree(handler);
 	} else {
 		mfd->input_handler = handler;
 	}
@@ -1107,7 +1107,7 @@ static void mdss_fb_unregister_input_handler(struct msm_fb_data_type *mfd)
 		return;
 
 	input_unregister_handler(mfd->input_handler);
-	kfree(mfd->input_handler);
+	kvfree(mfd->input_handler);
 }
 
 static void mdss_fb_videomode_from_panel_timing(struct fb_videomode *videomode,
@@ -2789,7 +2789,7 @@ static int mdss_fb_open(struct fb_info *info, int user)
 		return -ESHUTDOWN;
 	}
 
-	file_info = kmalloc(sizeof(*file_info), GFP_KERNEL);
+	file_info = kvmalloc(sizeof(*file_info), GFP_KERNEL);
 	if (!file_info) {
 		pr_err("unable to alloc file info\n");
 		return -ENOMEM;
@@ -2824,7 +2824,7 @@ blank_error:
 	pm_runtime_put(info->dev);
 pm_error:
 	list_del(&file_info->list);
-	kfree(file_info);
+	kvfree(file_info);
 	return result;
 }
 
@@ -2866,7 +2866,7 @@ static int mdss_fb_release_all(struct fb_info *info, bool release_all)
 
 		pr_debug("found file node mfd->ref=%d\n", mfd->ref_cnt);
 		list_del(&file_info->list);
-		kfree(file_info);
+		kvfree(file_info);
 
 		mfd->ref_cnt--;
 		pm_runtime_put(info->dev);
@@ -3925,11 +3925,11 @@ static int mdss_fb_check_var(struct fb_var_screeninfo *var,
 		rc = mdss_fb_send_panel_event(mfd, MDSS_EVENT_CHECK_PARAMS,
 			panel_info);
 		if (IS_ERR_VALUE(rc)) {
-			kfree(panel_info);
+			kvfree(panel_info);
 			return rc;
 		}
 		mfd->panel_reconfig = rc;
-		kfree(panel_info);
+		kvfree(panel_info);
 	}
 
 	return 0;
@@ -4225,7 +4225,7 @@ static int mdss_fb_async_position_update_ioctl(struct fb_info *info,
 	}
 
 	buffer_size = sizeof(struct mdp_async_layer) * layer_cnt;
-	layer_list = kmalloc(buffer_size, GFP_KERNEL);
+	layer_list = kvmalloc(buffer_size, GFP_KERNEL);
 	if (!layer_list) {
 		pr_err("unable to allocate memory for layers\n");
 		return -ENOMEM;
@@ -4253,7 +4253,7 @@ static int mdss_fb_async_position_update_ioctl(struct fb_info *info,
 		pr_err("copy to user for layers failed");
 
 end:
-	kfree(layer_list);
+	kvfree(layer_list);
 	return ret;
 }
 
@@ -4555,11 +4555,11 @@ static int __mdss_fb_scaler_handler(struct mdp_input_layer *layer)
 	} else {
 		layer->scale = NULL;
 	}
-	kfree(pixel_ext);
+	kvfree(pixel_ext);
 	return ret;
 err:
-	kfree(pixel_ext);
-	kfree(scale);
+	kvfree(pixel_ext);
+	kvfree(scale);
 	layer->scale = NULL;
 	return ret;
 }
@@ -4640,7 +4640,7 @@ static int __mdss_fb_copy_destscaler_data(struct fb_info *info,
 					data_size);
 			if (ret) {
 				pr_err("scale data copy from user failed\n");
-				kfree(scale_data);
+				kvfree(scale_data);
 				goto err;
 			}
 		}
@@ -4652,9 +4652,9 @@ err:
 	if (ds_data) {
 		for (i--; i >= 0; i--) {
 			scale_data = to_user_ptr(ds_data[i].scale);
-			kfree(scale_data);
+			kvfree(scale_data);
 		}
-		kfree(ds_data);
+		kvfree(ds_data);
 	}
 
 	return ret;
@@ -4819,16 +4819,16 @@ static int mdss_fb_atomic_commit_ioctl(struct fb_info *info,
 
 err:
 	for (i--; i >= 0; i--) {
-		kfree(layer_list[i].scale);
+		kvfree(layer_list[i].scale);
 		layer_list[i].scale = NULL;
 		mdss_mdp_free_layer_pp_info(&layer_list[i]);
 	}
-	kfree(layer_list);
-	kfree(output_layer);
+	kvfree(layer_list);
+	kvfree(output_layer);
 	if (ds_data) {
 		for (i = 0; i < commit.commit_v1.dest_scaler_cnt; i++)
-			kfree(to_user_ptr(ds_data[i].scale));
-		kfree(ds_data);
+			kvfree(to_user_ptr(ds_data[i].scale));
+		kvfree(ds_data);
 	}
 
 	return ret;

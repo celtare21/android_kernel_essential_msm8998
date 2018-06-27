@@ -676,7 +676,7 @@ void mdss_reg_bus_vote_client_destroy(struct reg_bus_client *client)
 		mutex_lock(&mdss_res->reg_bus_lock);
 		list_del_init(&client->list);
 		mutex_unlock(&mdss_res->reg_bus_lock);
-		kfree(client);
+		kvfree(client);
 	}
 }
 
@@ -3154,7 +3154,7 @@ static int mdss_mdp_probe(struct platform_device *pdev)
 	mdss_res->mdp_irq_raw = kcalloc(ARRAY_SIZE(mdp_intr_reg),
 			sizeof(u32), GFP_KERNEL);
 	if (mdss_res->mdp_irq_raw == NULL) {
-		kfree(mdss_res->mdp_irq_mask);
+		kvfree(mdss_res->mdp_irq_mask);
 		mdss_res->mdp_irq_mask = NULL;
 		return -ENOMEM;
 	}
@@ -3162,8 +3162,8 @@ static int mdss_mdp_probe(struct platform_device *pdev)
 	mdss_res->mdp_irq_export = kcalloc(ARRAY_SIZE(mdp_intr_reg),
 			sizeof(u32), GFP_KERNEL);
 	if (mdss_res->mdp_irq_export == NULL) {
-		kfree(mdss_res->mdp_irq_mask);
-		kfree(mdss_res->mdp_irq_raw);
+		kvfree(mdss_res->mdp_irq_mask);
+		kvfree(mdss_res->mdp_irq_raw);
 		mdss_res->mdp_irq_mask = NULL;
 		mdss_res->mdp_irq_raw = NULL;
 		return -ENOMEM;
@@ -3811,11 +3811,11 @@ static int mdss_mdp_parse_dt_mixer(struct platform_device *pdev)
 	}
 
 parse_done:
-	kfree(pingpong_offsets);
+	kvfree(pingpong_offsets);
 pingpong_alloc_fail:
-	kfree(dspp_offsets);
+	kvfree(dspp_offsets);
 dspp_alloc_fail:
-	kfree(mixer_offsets);
+	kvfree(mixer_offsets);
 
 	return rc;
 }
@@ -3883,7 +3883,7 @@ static int mdss_mdp_parse_dt_cdm(struct platform_device *pdev)
 	}
 
 fail:
-	kfree(cdm_offsets);
+	kvfree(cdm_offsets);
 	if (rc)
 		mdata->ncdm = 0;
 end:
@@ -3949,7 +3949,7 @@ static int mdss_mdp_parse_dt_dsc(struct platform_device *pdev)
 	}
 
 fail:
-	kfree(dsc_offsets);
+	kvfree(dsc_offsets);
 	if (rc)
 		mdata->ndsc = 0;
 end:
@@ -3997,7 +3997,7 @@ static int mdss_mdp_parse_dt_wb(struct platform_device *pdev)
 	return 0;
 
 wb_parse_done:
-	kfree(wb_offsets);
+	kvfree(wb_offsets);
 	return rc;
 }
 
@@ -4033,7 +4033,7 @@ static int mdss_mdp_parse_dt_ctl(struct platform_device *pdev)
 		goto parse_done;
 
 parse_done:
-	kfree(ctl_offsets);
+	kvfree(ctl_offsets);
 
 	return rc;
 }
@@ -4066,7 +4066,7 @@ static int mdss_mdp_parse_dt_video_intf(struct platform_device *pdev)
 		pr_err("unable to setup video interfaces\n");
 
 parse_fail:
-	kfree(offsets);
+	kvfree(offsets);
 
 	return rc;
 }
@@ -4633,7 +4633,7 @@ static int mdss_mdp_parse_dt_ad_cfg(struct platform_device *pdev)
 		pr_err("unable to setup assertive display\n");
 
 parse_done:
-	kfree(ad_offsets);
+	kvfree(ad_offsets);
 	return rc;
 }
 

@@ -1212,7 +1212,7 @@ int mdss_dsi_parse_dcs_cmds(struct device_node *np,
 	return 0;
 
 exit_free:
-	kfree(buf);
+	kvfree(buf);
 	return -ENOMEM;
 }
 
@@ -2017,7 +2017,7 @@ static bool mdss_dsi_parse_esd_status_len(struct device_node *np,
 
 	if (of_property_read_u32_array(np, prop_key, *target, tmp)) {
 		pr_err("%s: cannot get values from dts\n", __func__);
-		kfree(*target);
+		kvfree(*target);
 		*target = NULL;
 		return false;
 	}
@@ -2131,10 +2131,10 @@ static void mdss_dsi_parse_esd_params(struct device_node *np,
 	return;
 
 error2:
-	kfree(ctrl->status_value);
+	kvfree(ctrl->status_value);
 error1:
-	kfree(ctrl->status_valid_params);
-	kfree(ctrl->status_cmds_rlen);
+	kvfree(ctrl->status_valid_params);
+	kvfree(ctrl->status_cmds_rlen);
 error:
 	pinfo->esd_check_enabled = false;
 }
@@ -2664,7 +2664,7 @@ static int mdss_panel_parse_display_timings(struct device_node *np,
 					panel_data, true);
 			rc = mdss_dsi_panel_timing_switch(ctrl, &pt->timing);
 		} else {
-			kfree(pt);
+			kvfree(pt);
 		}
 		return rc;
 	}
@@ -2686,7 +2686,7 @@ static int mdss_panel_parse_display_timings(struct device_node *np,
 		rc = mdss_dsi_panel_timing_from_dt(entry, (modedb + i),
 				panel_data);
 		if (rc) {
-			kfree(modedb);
+			kvfree(modedb);
 			goto exit;
 		}
 

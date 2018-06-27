@@ -1382,7 +1382,7 @@ static int mdp3_parse_dt(struct platform_device *pdev)
 	if (rc) {
 		pr_err("%s: Error in panel override:rc=[%d]\n",
 		       __func__, rc);
-		kfree(mdp3_res->mdp3_hw.irq_info);
+		kvfree(mdp3_res->mdp3_hw.irq_info);
 		return rc;
 	}
 
@@ -1513,7 +1513,7 @@ static void mdp3_iommu_meta_destroy(struct kref *kref)
 	rb_erase(&meta->node, &mdp3_res->iommu_root);
 	mdp3_iommu_heap_unmap_iommu(meta);
 	dma_buf_put(meta->dbuf);
-	kfree(meta);
+	kvfree(meta);
 }
 
 
@@ -1707,7 +1707,7 @@ static struct mdp3_iommu_meta *mdp3_iommu_meta_create(struct ion_client *client,
 
 	return meta;
 out:
-	kfree(meta);
+	kvfree(meta);
 	return ERR_PTR(ret);
 }
 
@@ -2824,7 +2824,7 @@ static int mdp3_probe(struct platform_device *pdev)
 
 probe_done:
 	if (IS_ERR_VALUE(rc))
-		kfree(mdp3_res->mdp3_hw.irq_info);
+		kvfree(mdp3_res->mdp3_hw.irq_info);
 get_util_fail:
 	if (IS_ERR_VALUE(rc)) {
 		mdp3_res_deinit();

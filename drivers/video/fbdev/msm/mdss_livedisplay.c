@@ -119,7 +119,7 @@ static int parse_dsi_cmds(struct mdss_livedisplay_ctx *mlc,
 	return 0;
 
 exit_free:
-	kfree(buf);
+	kvfree(buf);
 	return -ENOMEM;
 }
 
@@ -251,7 +251,7 @@ int mdss_livedisplay_update(struct mdss_dsi_ctrl_pdata *ctrl_pdata,
 		pr_err("%s: error parsing DSI command! ret=%d", __func__, ret);
 	}
 
-	kfree(cmd_buf);
+	kvfree(cmd_buf);
 
 	return ret;
 }

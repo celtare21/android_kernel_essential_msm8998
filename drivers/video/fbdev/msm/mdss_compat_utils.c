@@ -143,7 +143,7 @@ static struct mdp_input_layer32 *__create_layer_list32(
 
 	buffer_size32 = sizeof(struct mdp_input_layer32) * layer_count;
 
-	layer_list32 = kmalloc(buffer_size32, GFP_KERNEL);
+	layer_list32 = kvmalloc(buffer_size32, GFP_KERNEL);
 	if (!layer_list32) {
 		pr_err("unable to allocate memory for layers32\n");
 		layer_list32 = ERR_PTR(-ENOMEM);
@@ -156,7 +156,7 @@ static struct mdp_input_layer32 *__create_layer_list32(
 	if (ret) {
 		pr_err("layer list32 copy from user failed, ptr %pK\n",
 			compat_ptr(commit32->commit_v1.input_layers));
-		kfree(layer_list32);
+		kvfree(layer_list32);
 		ret = -EFAULT;
 		layer_list32 = ERR_PTR(ret);
 	}
@@ -174,7 +174,7 @@ static int __copy_scale_params(struct mdp_input_layer *layer,
 	if (!(layer->flags & MDP_LAYER_ENABLE_PIXEL_EXT))
 		return 0;
 
-	scale = kmalloc(sizeof(struct mdp_scale_data), GFP_KERNEL);
+	scale = kvmalloc(sizeof(struct mdp_scale_data), GFP_KERNEL);
 	if (!scale) {
 		pr_err("unable to allocate memory for scale param\n");
 		ret = -ENOMEM;
@@ -185,7 +185,7 @@ static int __copy_scale_params(struct mdp_input_layer *layer,
 	ret = copy_from_user(scale, compat_ptr(layer32->scale),
 			sizeof(struct mdp_scale_data));
 	if (ret) {
-		kfree(scale);
+		kvfree(scale);
 		pr_err("scale param copy from user failed, ptr %pK\n",
 			compat_ptr(layer32->scale));
 		ret = -EFAULT;
@@ -208,7 +208,7 @@ static struct mdp_input_layer *__create_layer_list(
 
 	buffer_size = sizeof(struct mdp_input_layer) * layer_count;
 
-	layer_list = kmalloc(buffer_size, GFP_KERNEL);
+	layer_list = kvmalloc(buffer_size, GFP_KERNEL);
 	if (!layer_list) {
 		pr_err("unable to allocate memory for layers32\n");
 		layer_list = ERR_PTR(-ENOMEM);
@@ -251,10 +251,10 @@ static struct mdp_input_layer *__create_layer_list(
 
 	if (ret) {
 		for (i--; i >= 0; i--) {
-			kfree(layer_list[i].scale);
+			kvfree(layer_list[i].scale);
 			mdss_mdp_free_layer_pp_info(&layer_list[i]);
 		}
-		kfree(layer_list);
+		kvfree(layer_list);
 		layer_list = ERR_PTR(ret);
 	}
 
@@ -379,13 +379,13 @@ static int __compat_atomic_commit(struct fb_info *info, unsigned int cmd,
 			argp, layer_count);
 
 	for (i = 0; i < layer_count; i++) {
-		kfree(layer_list[i].scale);
+		kvfree(layer_list[i].scale);
 		mdss_mdp_free_layer_pp_info(&layer_list[i]);
 	}
-	kfree(layer_list);
+	kvfree(layer_list);
 layer_list_err:
-	kfree(layer_list32);
-	kfree(output_layer);
+	kvfree(layer_list32);
+	kvfree(output_layer);
 	return ret;
 }
 
@@ -418,7 +418,7 @@ static struct mdp_async_layer *__create_async_layer_list(
 
 	buffer_size = sizeof(struct mdp_async_layer) * layer_cnt;
 
-	layer_list = kmalloc(buffer_size, GFP_KERNEL);
+	layer_list = kvmalloc(buffer_size, GFP_KERNEL);
 	if (!layer_list) {
 		layer_list = ERR_PTR(-ENOMEM);
 		goto end;
@@ -428,7 +428,7 @@ static struct mdp_async_layer *__create_async_layer_list(
 			update_pos32->input_layers, buffer_size);
 	if (ret) {
 		pr_err("layer list32 copy from user failed\n");
-		kfree(layer_list);
+		kvfree(layer_list);
 		layer_list = ERR_PTR(ret);
 	}
 
@@ -475,7 +475,7 @@ static int __compat_async_position_update(struct fb_info *info,
 	if (ret)
 		pr_err("copy to user of async update position failed\n");
 
-	kfree(layer_list);
+	kvfree(layer_list);
 	return ret;
 }
 
@@ -3467,7 +3467,7 @@ static int __copy_layer_pp_info_igc_params(
 	if (pp_info->igc_cfg.version != 0) {
 		payload_size = __pp_compat_size_igc();
 
-		cfg_payload = kmalloc(payload_size, GFP_KERNEL);
+		cfg_payload = kvmalloc(payload_size, GFP_KERNEL);
 		if (!cfg_payload) {
 			ret = -ENOMEM;
 			goto exit;
@@ -3481,7 +3481,7 @@ static int __copy_layer_pp_info_igc_params(
 		if (ret) {
 			pr_err("compat copy of IGC cfg payload failed, ret %d\n",
 				ret);
-			kfree(cfg_payload);
+			kvfree(cfg_payload);
 			cfg_payload = NULL;
 			goto exit;
 		}
@@ -3493,7 +3493,7 @@ static int __copy_layer_pp_info_igc_params(
 			compat_ptr(pp_info32->igc_cfg.c0_c1_data);
 		pp_info->igc_cfg.c2_data =
 			compat_ptr(pp_info32->igc_cfg.c2_data);
-		kfree(cfg_payload);
+		kvfree(cfg_payload);
 		cfg_payload = NULL;
 		break;
 	}
@@ -3542,7 +3542,7 @@ static int __copy_layer_pp_info_hist_lut_params(
 	if (pp_info->hist_lut_cfg.version != 0) {
 		payload_size = __pp_compat_size_hist_lut();
 
-		cfg_payload = kmalloc(payload_size, GFP_KERNEL);
+		cfg_payload = kvmalloc(payload_size, GFP_KERNEL);
 		if (!cfg_payload) {
 			ret = -ENOMEM;
 			goto exit;
@@ -3556,7 +3556,7 @@ static int __copy_layer_pp_info_hist_lut_params(
 		if (ret) {
 			pr_err("compat copy of Hist LUT cfg payload failed, ret %d\n",
 				ret);
-			kfree(cfg_payload);
+			kvfree(cfg_payload);
 			cfg_payload = NULL;
 			goto exit;
 		}
@@ -3566,7 +3566,7 @@ static int __copy_layer_pp_info_hist_lut_params(
 		pp_info->hist_lut_cfg.len = pp_info32->hist_lut_cfg.len;
 		pp_info->hist_lut_cfg.data =
 				compat_ptr(pp_info32->hist_lut_cfg.data);
-		kfree(cfg_payload);
+		kvfree(cfg_payload);
 		cfg_payload = NULL;
 		break;
 	}
@@ -3635,7 +3635,7 @@ static int __copy_layer_pp_info_pa_v2_params(
 	if (pp_info->pa_v2_cfg_data.version != 0) {
 		payload_size = __pp_compat_size_pa();
 
-		cfg_payload = kmalloc(payload_size, GFP_KERNEL);
+		cfg_payload = kvmalloc(payload_size, GFP_KERNEL);
 		if (!cfg_payload) {
 			ret = -ENOMEM;
 			goto exit;
@@ -3649,14 +3649,14 @@ static int __copy_layer_pp_info_pa_v2_params(
 		if (ret) {
 			pr_err("compat copy of PA cfg payload failed, ret %d\n",
 				ret);
-			kfree(cfg_payload);
+			kvfree(cfg_payload);
 			cfg_payload = NULL;
 			goto exit;
 		}
 		break;
 	default:
 		pr_debug("version invalid\n");
-		kfree(cfg_payload);
+		kvfree(cfg_payload);
 		cfg_payload = NULL;
 		break;
 	}
@@ -3716,7 +3716,7 @@ static int __copy_layer_pp_info_pcc_params(
 	if (pp_info->pcc_cfg_data.version != 0) {
 		payload_size = __pp_compat_size_pcc();
 
-		cfg_payload = kmalloc(payload_size, GFP_KERNEL);
+		cfg_payload = kvmalloc(payload_size, GFP_KERNEL);
 		if (!cfg_payload) {
 			ret = -ENOMEM;
 			goto exit;
@@ -3733,14 +3733,14 @@ static int __copy_layer_pp_info_pcc_params(
 				compat_ptr(
 				pp_info32->pcc_cfg_data.cfg_payload));
 			ret = -EFAULT;
-			kfree(cfg_payload);
+			kvfree(cfg_payload);
 			cfg_payload = NULL;
 			goto exit;
 		}
 		break;
 	default:
 		pr_debug("version invalid, fallback to legacy\n");
-		kfree(cfg_payload);
+		kvfree(cfg_payload);
 		cfg_payload = NULL;
 		break;
 	}
@@ -3770,7 +3770,7 @@ static int __copy_layer_pp_info_params(struct mdp_input_layer *layer,
 		goto exit;
 	}
 
-	pp_info = kmalloc(sizeof(struct mdp_overlay_pp_params), GFP_KERNEL);
+	pp_info = kvmalloc(sizeof(struct mdp_overlay_pp_params), GFP_KERNEL);
 	if (!pp_info) {
 		ret = -ENOMEM;
 		goto exit;
@@ -3830,13 +3830,13 @@ static int __copy_layer_pp_info_params(struct mdp_input_layer *layer,
 	return ret;
 
 exit_pa:
-	kfree(pp_info->pa_v2_cfg_data.cfg_payload);
+	kvfree(pp_info->pa_v2_cfg_data.cfg_payload);
 exit_hist_lut:
-	kfree(pp_info->hist_lut_cfg.cfg_payload);
+	kvfree(pp_info->hist_lut_cfg.cfg_payload);
 exit_igc:
-	kfree(pp_info->igc_cfg.cfg_payload);
+	kvfree(pp_info->igc_cfg.cfg_payload);
 exit_pp_info:
-	kfree(pp_info);
+	kvfree(pp_info);
 exit:
 	return ret;
 }
