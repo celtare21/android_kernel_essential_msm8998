@@ -48,7 +48,7 @@ static int relay_buf_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 	if (!buf)
 		return VM_FAULT_OOM;
 
-	page = vmalloc_to_page(buf->start + (pgoff << PAGE_SHIFT));
+	page = kvmalloc_to_page(buf->start + (pgoff << PAGE_SHIFT));
 	if (!page)
 		return VM_FAULT_SIGBUS;
 	get_page(page);
@@ -72,7 +72,7 @@ static struct page **relay_alloc_page_array(unsigned int n_pages)
 {
 	const size_t pa_size = n_pages * sizeof(struct page *);
 	if (pa_size > PAGE_SIZE)
-		return vzalloc(pa_size);
+		return kzalloc(pa_size);
 	return kzalloc(pa_size, GFP_KERNEL);
 }
 
@@ -166,10 +166,10 @@ static struct rchan_buf *relay_create_buf(struct rchan *chan)
 	if (chan->n_subbufs > KMALLOC_MAX_SIZE / sizeof(size_t *))
 		return NULL;
 
-	buf = kzalloc(sizeof(struct rchan_buf), GFP_KERNEL);
+	buf = kvzalloc(sizeof(struct rchan_buf), GFP_KERNEL);
 	if (!buf)
 		return NULL;
-	buf->padding = kmalloc(chan->n_subbufs * sizeof(size_t *), GFP_KERNEL);
+	buf->padding = kvmalloc(chan->n_subbufs * sizeof(size_t *), GFP_KERNEL);
 	if (!buf->padding)
 		goto free_buf;
 
@@ -182,8 +182,8 @@ static struct rchan_buf *relay_create_buf(struct rchan *chan)
 	return buf;
 
 free_buf:
-	kfree(buf->padding);
-	kfree(buf);
+	kvfree(buf->padding);
+	kvfree(buf);
 	return NULL;
 }
 
@@ -196,7 +196,7 @@ free_buf:
 static void relay_destroy_channel(struct kref *kref)
 {
 	struct rchan *chan = container_of(kref, struct rchan, kref);
-	kfree(chan);
+	kvfree(chan);
 }
 
 /**
@@ -215,8 +215,8 @@ static void relay_destroy_buf(struct rchan_buf *buf)
 		relay_free_page_array(buf->page_array);
 	}
 	chan->buf[buf->cpu] = NULL;
-	kfree(buf->padding);
-	kfree(buf);
+	kvfree(buf->padding);
+	kvfree(buf);
 	kref_put(&chan->kref, relay_destroy_channel);
 }
 
@@ -414,7 +414,7 @@ static struct dentry *relay_create_buf_file(struct rchan *chan,
 	struct dentry *dentry;
 	char *tmpname;
 
-	tmpname = kzalloc(NAME_MAX + 1, GFP_KERNEL);
+	tmpname = kvzalloc(NAME_MAX + 1, GFP_KERNEL);
 	if (!tmpname)
 		return NULL;
 	snprintf(tmpname, NAME_MAX, "%s%d", chan->base_filename, cpu);
@@ -424,7 +424,7 @@ static struct dentry *relay_create_buf_file(struct rchan *chan,
 					   S_IRUSR, buf,
 					   &chan->is_global);
 
-	kfree(tmpname);
+	kvfree(tmpname);
 
 	return dentry;
 }
@@ -578,7 +578,7 @@ struct rchan *relay_open(const char *base_filename,
 	if (subbuf_size > UINT_MAX / n_subbufs)
 		return NULL;
 
-	chan = kzalloc(sizeof(struct rchan), GFP_KERNEL);
+	chan = kvzalloc(sizeof(struct rchan), GFP_KERNEL);
 	if (!chan)
 		return NULL;
 

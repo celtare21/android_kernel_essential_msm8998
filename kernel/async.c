@@ -140,7 +140,7 @@ static void async_run_entry_fn(struct work_struct *work)
 	list_del_init(&entry->global_list);
 
 	/* 3) free the entry */
-	kfree(entry);
+	kvfree(entry);
 	atomic_dec(&entry_count);
 
 	spin_unlock_irqrestore(&async_lock, flags);
@@ -156,14 +156,14 @@ static async_cookie_t __async_schedule(async_func_t func, void *data, struct asy
 	async_cookie_t newcookie;
 
 	/* allow irq-off callers */
-	entry = kzalloc(sizeof(struct async_entry), GFP_ATOMIC);
+	entry = kvzalloc(sizeof(struct async_entry), GFP_ATOMIC);
 
 	/*
 	 * If we're out of memory or if there's too much work
 	 * pending already, we execute synchronously.
 	 */
 	if (!entry || atomic_read(&entry_count) > MAX_WORK) {
-		kfree(entry);
+		kvfree(entry);
 		spin_lock_irqsave(&async_lock, flags);
 		newcookie = next_cookie++;
 		spin_unlock_irqrestore(&async_lock, flags);

@@ -160,7 +160,7 @@ static void send_cpu_listeners(struct sk_buff *skb,
 	list_for_each_entry_safe(s, tmp, &listeners->list, list) {
 		if (!s->valid) {
 			list_del(&s->list);
-			kfree(s);
+			kvfree(s);
 		}
 	}
 	up_write(&listeners->sem);
@@ -294,7 +294,7 @@ static int add_del_listener(pid_t pid, const struct cpumask *mask, int isadd)
 
 	if (isadd == REGISTER) {
 		for_each_cpu(cpu, mask) {
-			s = kmalloc_node(sizeof(struct listener),
+			s = kvmalloc_node(sizeof(struct listener),
 					GFP_KERNEL, cpu_to_node(cpu));
 			if (!s) {
 				ret = -ENOMEM;
@@ -313,7 +313,7 @@ static int add_del_listener(pid_t pid, const struct cpumask *mask, int isadd)
 			s = NULL;
 exists:
 			up_write(&listeners->sem);
-			kfree(s); /* nop if NULL */
+			kvfree(s); /* nop if NULL */
 		}
 		return 0;
 	}
@@ -326,7 +326,7 @@ cleanup:
 		list_for_each_entry_safe(s, tmp, &listeners->list, list) {
 			if (s->pid == pid) {
 				list_del(&s->list);
-				kfree(s);
+				kvfree(s);
 				break;
 			}
 		}
@@ -348,12 +348,12 @@ static int parse(struct nlattr *na, struct cpumask *mask)
 		return -E2BIG;
 	if (len < 1)
 		return -EINVAL;
-	data = kmalloc(len, GFP_KERNEL);
+	data = kvmalloc(len, GFP_KERNEL);
 	if (!data)
 		return -ENOMEM;
 	nla_strlcpy(data, na, len);
 	ret = cpulist_parse(data, mask);
-	kfree(data);
+	kvfree(data);
 	return ret;
 }
 

@@ -123,8 +123,8 @@ static void __wakelocks_gc(struct work_struct *work)
 			wakeup_source_remove(&wl->ws);
 			rb_erase(&wl->node, &wakelocks_tree);
 			list_del(&wl->lru);
-			kfree(wl->name);
-			kfree(wl);
+			kvfree(wl->name);
+			kvfree(wl);
 			decrement_wakelocks_number();
 		}
 	}
@@ -177,13 +177,13 @@ static struct wakelock *wakelock_lookup_add(const char *name, size_t len,
 		return ERR_PTR(-ENOSPC);
 
 	/* Not found, we have to add a new one. */
-	wl = kzalloc(sizeof(*wl), GFP_KERNEL);
+	wl = kvzalloc(sizeof(*wl), GFP_KERNEL);
 	if (!wl)
 		return ERR_PTR(-ENOMEM);
 
 	wl->name = kstrndup(name, len, GFP_KERNEL);
 	if (!wl->name) {
-		kfree(wl);
+		kvfree(wl);
 		return ERR_PTR(-ENOMEM);
 	}
 	wl->ws.name = wl->name;

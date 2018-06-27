@@ -429,7 +429,7 @@ static struct cpuset *alloc_trial_cpuset(struct cpuset *cs)
 free_cpus:
 	free_cpumask_var(trial->cpus_allowed);
 free_cs:
-	kfree(trial);
+	kvfree(trial);
 	return NULL;
 }
 
@@ -441,7 +441,7 @@ static void free_trial_cpuset(struct cpuset *trial)
 {
 	free_cpumask_var(trial->effective_cpus);
 	free_cpumask_var(trial->cpus_allowed);
-	kfree(trial);
+	kvfree(trial);
 }
 
 /*
@@ -658,7 +658,7 @@ static int generate_sched_domains(cpumask_var_t **domains,
 		if (!doms)
 			goto done;
 
-		dattr = kmalloc(sizeof(struct sched_domain_attr), GFP_KERNEL);
+		dattr = kvmalloc(sizeof(struct sched_domain_attr), GFP_KERNEL);
 		if (dattr) {
 			*dattr = SD_ATTR_INIT;
 			update_domain_attr_tree(dattr, &top_cpuset);
@@ -669,7 +669,7 @@ static int generate_sched_domains(cpumask_var_t **domains,
 		goto done;
 	}
 
-	csa = kmalloc(nr_cpusets() * sizeof(cp), GFP_KERNEL);
+	csa = kvmalloc(nr_cpusets() * sizeof(cp), GFP_KERNEL);
 	if (!csa)
 		goto done;
 	csn = 0;
@@ -738,7 +738,7 @@ restart:
 	 * The rest of the code, including the scheduler, can deal with
 	 * dattr==NULL case. No need to abort if alloc fails.
 	 */
-	dattr = kmalloc(ndoms * sizeof(struct sched_domain_attr), GFP_KERNEL);
+	dattr = kvmalloc(ndoms * sizeof(struct sched_domain_attr), GFP_KERNEL);
 
 	for (nslot = 0, i = 0; i < csn; i++) {
 		struct cpuset *a = csa[i];
@@ -784,10 +784,10 @@ restart:
 
 done:
 	free_cpumask_var(non_isolated_cpus);
-	kfree(csa);
+	kvfree(csa);
 
 	/*
-	 * Fallback to the default domain if kmalloc() failed.
+	 * Fallback to the default domain if kvmalloc() failed.
 	 * See comments in partition_sched_domains().
 	 */
 	if (doms == NULL)
@@ -1007,7 +1007,7 @@ static void cpuset_migrate_mm_workfn(struct work_struct *work)
 	/* on a wq worker, no need to worry about %current's mems_allowed */
 	do_migrate_pages(mwork->mm, &mwork->from, &mwork->to, MPOL_MF_MOVE_ALL);
 	mmput(mwork->mm);
-	kfree(mwork);
+	kvfree(mwork);
 }
 
 static void cpuset_migrate_mm(struct mm_struct *mm, const nodemask_t *from,
@@ -1983,7 +1983,7 @@ error_requested:
 error_effective:
 	free_cpumask_var(cs->cpus_allowed);
 error_allowed:
-	kfree(cs);
+	kvfree(cs);
 	return ERR_PTR(-ENOMEM);
 }
 
@@ -2081,7 +2081,7 @@ static void cpuset_css_free(struct cgroup_subsys_state *css)
 	free_cpumask_var(cs->effective_cpus);
 	free_cpumask_var(cs->cpus_allowed);
 	free_cpumask_var(cs->cpus_requested);
-	kfree(cs);
+	kvfree(cs);
 }
 
 static void cpuset_bind(struct cgroup_subsys_state *root_css)
@@ -2766,7 +2766,7 @@ int proc_cpuset_show(struct seq_file *m, struct pid_namespace *ns,
 	int retval;
 
 	retval = -ENOMEM;
-	buf = kmalloc(PATH_MAX, GFP_KERNEL);
+	buf = kvmalloc(PATH_MAX, GFP_KERNEL);
 	if (!buf)
 		goto out;
 
@@ -2781,7 +2781,7 @@ int proc_cpuset_show(struct seq_file *m, struct pid_namespace *ns,
 	seq_putc(m, '\n');
 	retval = 0;
 out_free:
-	kfree(buf);
+	kvfree(buf);
 out:
 	return retval;
 }

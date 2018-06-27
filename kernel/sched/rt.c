@@ -137,13 +137,13 @@ void free_rt_sched_group(struct task_group *tg)
 
 	for_each_possible_cpu(i) {
 		if (tg->rt_rq)
-			kfree(tg->rt_rq[i]);
+			kvfree(tg->rt_rq[i]);
 		if (tg->rt_se)
-			kfree(tg->rt_se[i]);
+			kvfree(tg->rt_se[i]);
 	}
 
-	kfree(tg->rt_rq);
-	kfree(tg->rt_se);
+	kvfree(tg->rt_rq);
+	kvfree(tg->rt_se);
 }
 
 void init_tg_rt_entry(struct task_group *tg, struct rt_rq *rt_rq,
@@ -179,10 +179,10 @@ int alloc_rt_sched_group(struct task_group *tg, struct task_group *parent)
 	struct sched_rt_entity *rt_se;
 	int i;
 
-	tg->rt_rq = kzalloc(sizeof(rt_rq) * nr_cpu_ids, GFP_KERNEL);
+	tg->rt_rq = kvzalloc(sizeof(rt_rq) * nr_cpu_ids, GFP_KERNEL);
 	if (!tg->rt_rq)
 		goto err;
-	tg->rt_se = kzalloc(sizeof(rt_se) * nr_cpu_ids, GFP_KERNEL);
+	tg->rt_se = kvzalloc(sizeof(rt_se) * nr_cpu_ids, GFP_KERNEL);
 	if (!tg->rt_se)
 		goto err;
 
@@ -190,12 +190,12 @@ int alloc_rt_sched_group(struct task_group *tg, struct task_group *parent)
 			ktime_to_ns(def_rt_bandwidth.rt_period), 0);
 
 	for_each_possible_cpu(i) {
-		rt_rq = kzalloc_node(sizeof(struct rt_rq),
+		rt_rq = kvzalloc_node(sizeof(struct rt_rq),
 				     GFP_KERNEL, cpu_to_node(i));
 		if (!rt_rq)
 			goto err;
 
-		rt_se = kzalloc_node(sizeof(struct sched_rt_entity),
+		rt_se = kvzalloc_node(sizeof(struct sched_rt_entity),
 				     GFP_KERNEL, cpu_to_node(i));
 		if (!rt_se)
 			goto err_free_rq;
@@ -208,7 +208,7 @@ int alloc_rt_sched_group(struct task_group *tg, struct task_group *parent)
 	return 1;
 
 err_free_rq:
-	kfree(rt_rq);
+	kvfree(rt_rq);
 err:
 	return 0;
 }

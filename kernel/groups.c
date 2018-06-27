@@ -18,7 +18,7 @@ struct group_info *groups_alloc(int gidsetsize)
 	nblocks = (gidsetsize + NGROUPS_PER_BLOCK - 1) / NGROUPS_PER_BLOCK;
 	/* Make sure we always allocate at least one indirect block pointer */
 	nblocks = nblocks ? : 1;
-	group_info = kmalloc(sizeof(*group_info) + nblocks*sizeof(gid_t *), GFP_USER);
+	group_info = kvmalloc(sizeof(*group_info) + nblocks*sizeof(gid_t *), GFP_USER);
 	if (!group_info)
 		return NULL;
 	group_info->ngroups = gidsetsize;
@@ -42,7 +42,7 @@ out_undo_partial_alloc:
 	while (--i >= 0) {
 		free_page((unsigned long)group_info->blocks[i]);
 	}
-	kfree(group_info);
+	kvfree(group_info);
 	return NULL;
 }
 
@@ -55,7 +55,7 @@ void groups_free(struct group_info *group_info)
 		for (i = 0; i < group_info->nblocks; i++)
 			free_page((unsigned long)group_info->blocks[i]);
 	}
-	kfree(group_info);
+	kvfree(group_info);
 }
 
 EXPORT_SYMBOL(groups_free);

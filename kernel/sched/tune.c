@@ -859,7 +859,7 @@ schedtune_css_alloc(struct cgroup_subsys_state *parent_css)
 		return ERR_PTR(-ENOSPC);
 	}
 
-	st = kzalloc(sizeof(*st), GFP_KERNEL);
+	st = kvzalloc(sizeof(*st), GFP_KERNEL);
 	if (!st)
 		goto out;
 
@@ -872,7 +872,7 @@ schedtune_css_alloc(struct cgroup_subsys_state *parent_css)
 	return &st->css;
 
 release:
-	kfree(st);
+	kvfree(st);
 out:
 	return ERR_PTR(-ENOMEM);
 }
@@ -893,7 +893,7 @@ schedtune_css_free(struct cgroup_subsys_state *css)
 	struct schedtune *st = css_st(css);
 
 	schedtune_boostgroup_release(st);
-	kfree(st);
+	kvfree(st);
 }
 
 struct cgroup_subsys schedtune_cgrp_subsys = {

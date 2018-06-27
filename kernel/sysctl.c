@@ -3042,7 +3042,7 @@ int proc_do_large_bitmap(struct ctl_table *table, int write,
                 }
 		kbuf[left] = 0;
 
-		tmp_bitmap = kzalloc(BITS_TO_LONGS(bitmap_len) * sizeof(unsigned long),
+		tmp_bitmap = kvzalloc(BITS_TO_LONGS(bitmap_len) * sizeof(unsigned long),
 				     GFP_KERNEL);
 		if (!tmp_bitmap) {
 			free_page(page);
@@ -3130,12 +3130,12 @@ int proc_do_large_bitmap(struct ctl_table *table, int write,
 			else
 				bitmap_copy(bitmap, tmp_bitmap, bitmap_len);
 		}
-		kfree(tmp_bitmap);
+		kvfree(tmp_bitmap);
 		*lenp -= left;
 		*ppos += *lenp;
 		return 0;
 	} else {
-		kfree(tmp_bitmap);
+		kvfree(tmp_bitmap);
 		return err;
 	}
 }

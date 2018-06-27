@@ -1654,7 +1654,7 @@ static struct worker *alloc_worker(int node)
 {
 	struct worker *worker;
 
-	worker = kzalloc_node(sizeof(*worker), GFP_KERNEL, node);
+	worker = kvzalloc_node(sizeof(*worker), GFP_KERNEL, node);
 	if (worker) {
 		INIT_LIST_HEAD(&worker->entry);
 		INIT_LIST_HEAD(&worker->scheduled);
@@ -1784,7 +1784,7 @@ static struct worker *create_worker(struct worker_pool *pool)
 fail:
 	if (id >= 0)
 		ida_simple_remove(&pool->worker_ida, id);
-	kfree(worker);
+	kvfree(worker);
 	return NULL;
 }
 
@@ -2169,7 +2169,7 @@ woke_up:
 		set_task_comm(worker->task, "kworker/dying");
 		ida_simple_remove(&pool->worker_ida, worker->id);
 		worker_detach_from_pool(worker, pool);
-		kfree(worker);
+		kvfree(worker);
 		return 0;
 	}
 
@@ -3042,7 +3042,7 @@ void free_workqueue_attrs(struct workqueue_attrs *attrs)
 {
 	if (attrs) {
 		free_cpumask_var(attrs->cpumask);
-		kfree(attrs);
+		kvfree(attrs);
 	}
 }
 
@@ -3059,7 +3059,7 @@ struct workqueue_attrs *alloc_workqueue_attrs(gfp_t gfp_mask)
 {
 	struct workqueue_attrs *attrs;
 
-	attrs = kzalloc(sizeof(*attrs), gfp_mask);
+	attrs = kvzalloc(sizeof(*attrs), gfp_mask);
 	if (!attrs)
 		goto fail;
 	if (!alloc_cpumask_var(&attrs->cpumask, gfp_mask))
@@ -3160,8 +3160,8 @@ static void rcu_free_wq(struct rcu_head *rcu)
 	else
 		free_workqueue_attrs(wq->unbound_attrs);
 
-	kfree(wq->rescuer);
-	kfree(wq);
+	kvfree(wq->rescuer);
+	kvfree(wq);
 }
 
 static void rcu_free_pool(struct rcu_head *rcu)
@@ -3170,7 +3170,7 @@ static void rcu_free_pool(struct rcu_head *rcu)
 
 	ida_destroy(&pool->worker_ida);
 	free_workqueue_attrs(pool->attrs);
-	kfree(pool);
+	kvfree(pool);
 }
 
 /**
@@ -3278,7 +3278,7 @@ static struct worker_pool *get_unbound_pool(const struct workqueue_attrs *attrs)
 	}
 
 	/* nope, create a new one */
-	pool = kzalloc_node(sizeof(*pool), GFP_KERNEL, target_node);
+	pool = kvzalloc_node(sizeof(*pool), GFP_KERNEL, target_node);
 	if (!pool || init_worker_pool(pool) < 0)
 		goto fail;
 
@@ -3541,7 +3541,7 @@ static void apply_wqattrs_cleanup(struct apply_wqattrs_ctx *ctx)
 
 		free_workqueue_attrs(ctx->attrs);
 
-		kfree(ctx);
+		kvfree(ctx);
 	}
 }
 
@@ -3556,7 +3556,7 @@ apply_wqattrs_prepare(struct workqueue_struct *wq,
 
 	lockdep_assert_held(&wq_pool_mutex);
 
-	ctx = kzalloc(sizeof(*ctx) + nr_node_ids * sizeof(ctx->pwq_tbl[0]),
+	ctx = kvzalloc(sizeof(*ctx) + nr_node_ids * sizeof(ctx->pwq_tbl[0]),
 		      GFP_KERNEL);
 
 	new_attrs = alloc_workqueue_attrs(GFP_KERNEL);
@@ -3872,7 +3872,7 @@ struct workqueue_struct *__alloc_workqueue_key(const char *fmt,
 	if (flags & WQ_UNBOUND)
 		tbl_size = nr_node_ids * sizeof(wq->numa_pwq_tbl[0]);
 
-	wq = kzalloc(sizeof(*wq) + tbl_size, GFP_KERNEL);
+	wq = kvzalloc(sizeof(*wq) + tbl_size, GFP_KERNEL);
 	if (!wq)
 		return NULL;
 
@@ -3920,7 +3920,7 @@ struct workqueue_struct *__alloc_workqueue_key(const char *fmt,
 		rescuer->task = kthread_create(rescuer_thread, rescuer, "%s",
 					       wq->name);
 		if (IS_ERR(rescuer->task)) {
-			kfree(rescuer);
+			kvfree(rescuer);
 			goto err_destroy;
 		}
 
@@ -3952,7 +3952,7 @@ struct workqueue_struct *__alloc_workqueue_key(const char *fmt,
 
 err_free_wq:
 	free_workqueue_attrs(wq->unbound_attrs);
-	kfree(wq);
+	kvfree(wq);
 	return NULL;
 err_destroy:
 	destroy_workqueue(wq);
@@ -5175,7 +5175,7 @@ static void wq_device_release(struct device *dev)
 {
 	struct wq_device *wq_dev = container_of(dev, struct wq_device, dev);
 
-	kfree(wq_dev);
+	kvfree(wq_dev);
 }
 
 /**
@@ -5206,7 +5206,7 @@ int workqueue_sysfs_register(struct workqueue_struct *wq)
 	if (WARN_ON(wq->flags & __WQ_ORDERED_EXPLICIT))
 		return -EINVAL;
 
-	wq->wq_dev = wq_dev = kzalloc(sizeof(*wq_dev), GFP_KERNEL);
+	wq->wq_dev = wq_dev = kvzalloc(sizeof(*wq_dev), GFP_KERNEL);
 	if (!wq_dev)
 		return -ENOMEM;
 
@@ -5435,7 +5435,7 @@ static void __init wq_numa_init(void)
 	 * available.  Build one from cpu_to_node() which should have been
 	 * fully initialized by now.
 	 */
-	tbl = kzalloc(nr_node_ids * sizeof(tbl[0]), GFP_KERNEL);
+	tbl = kvzalloc(nr_node_ids * sizeof(tbl[0]), GFP_KERNEL);
 	BUG_ON(!tbl);
 
 	for_each_node(node)

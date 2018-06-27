@@ -194,7 +194,7 @@ static int kthread(void *_create)
 	/* If user was SIGKILLed, I release the structure. */
 	done = xchg(&create->done, NULL);
 	if (!done) {
-		kfree(create);
+		kvfree(create);
 		do_exit(-EINTR);
 	}
 	/* OK, tell user we're spawned, wait for stop or wakeup */
@@ -238,7 +238,7 @@ static void create_kthread(struct kthread_create_info *create)
 		struct completion *done = xchg(&create->done, NULL);
 
 		if (!done) {
-			kfree(create);
+			kvfree(create);
 			return;
 		}
 		create->result = ERR_PTR(pid);
@@ -276,7 +276,7 @@ struct task_struct *kthread_create_on_node(int (*threadfn)(void *data),
 {
 	DECLARE_COMPLETION_ONSTACK(done);
 	struct task_struct *task;
-	struct kthread_create_info *create = kmalloc(sizeof(*create),
+	struct kthread_create_info *create = kvmalloc(sizeof(*create),
 						     GFP_KERNEL);
 
 	if (!create)
@@ -325,7 +325,7 @@ struct task_struct *kthread_create_on_node(int (*threadfn)(void *data),
 		sched_setscheduler_nocheck(task, SCHED_NORMAL, &param);
 		set_cpus_allowed_ptr(task, cpu_all_mask);
 	}
-	kfree(create);
+	kvfree(create);
 	return task;
 }
 EXPORT_SYMBOL(kthread_create_on_node);

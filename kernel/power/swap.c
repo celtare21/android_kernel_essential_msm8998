@@ -206,7 +206,7 @@ void free_all_swap_pages(int swap)
 		for (offset = ext->start; offset <= ext->end; offset++)
 			swap_free(swp_entry(swap, offset));
 
-		kfree(ext);
+		kvfree(ext);
 	}
 }
 
@@ -690,7 +690,7 @@ static int save_image_lzo(struct swap_map_handle *handle,
 		goto out_clean;
 	}
 
-	data = vmalloc(sizeof(*data) * nr_threads);
+	data = kvmalloc(sizeof(*data) * nr_threads);
 	if (!data) {
 		printk(KERN_ERR "PM: Failed to allocate LZO data\n");
 		ret = -ENOMEM;
@@ -699,7 +699,7 @@ static int save_image_lzo(struct swap_map_handle *handle,
 	for (thr = 0; thr < nr_threads; thr++)
 		memset(&data[thr], 0, offsetof(struct cmp_data, go));
 
-	crc = kmalloc(sizeof(*crc), GFP_KERNEL);
+	crc = kvmalloc(sizeof(*crc), GFP_KERNEL);
 	if (!crc) {
 		printk(KERN_ERR "PM: Failed to allocate crc\n");
 		ret = -ENOMEM;
@@ -856,7 +856,7 @@ out_clean:
 	if (crc) {
 		if (crc->thr)
 			kthread_stop(crc->thr);
-		kfree(crc);
+		kvfree(crc);
 	}
 	if (data) {
 		for (thr = 0; thr < nr_threads; thr++)
@@ -952,7 +952,7 @@ static void release_swap_reader(struct swap_map_handle *handle)
 			free_page((unsigned long)handle->maps->map);
 		tmp = handle->maps;
 		handle->maps = handle->maps->next;
-		kfree(tmp);
+		kvfree(tmp);
 	}
 	handle->cur = NULL;
 }
@@ -973,7 +973,7 @@ static int get_swap_reader(struct swap_map_handle *handle,
 	last = handle->maps = NULL;
 	offset = swsusp_header->image;
 	while (offset) {
-		tmp = kmalloc(sizeof(*handle->maps), GFP_KERNEL);
+		tmp = kvmalloc(sizeof(*handle->maps), GFP_KERNEL);
 		if (!tmp) {
 			release_swap_reader(handle);
 			return -ENOMEM;
@@ -1024,7 +1024,7 @@ static int swap_read_page(struct swap_map_handle *handle, void *buf,
 		free_page((unsigned long)handle->maps->map);
 		tmp = handle->maps;
 		handle->maps = handle->maps->next;
-		kfree(tmp);
+		kvfree(tmp);
 		if (!handle->maps)
 			release_swap_reader(handle);
 		else
@@ -1181,14 +1181,14 @@ static int load_image_lzo(struct swap_map_handle *handle,
 	nr_threads = num_online_cpus() - 1;
 	nr_threads = clamp_val(nr_threads, 1, LZO_THREADS);
 
-	page = vmalloc(sizeof(*page) * LZO_MAX_RD_PAGES);
+	page = kvmalloc(sizeof(*page) * LZO_MAX_RD_PAGES);
 	if (!page) {
 		printk(KERN_ERR "PM: Failed to allocate LZO page\n");
 		ret = -ENOMEM;
 		goto out_clean;
 	}
 
-	data = vmalloc(sizeof(*data) * nr_threads);
+	data = kvmalloc(sizeof(*data) * nr_threads);
 	if (!data) {
 		printk(KERN_ERR "PM: Failed to allocate LZO data\n");
 		ret = -ENOMEM;
@@ -1197,7 +1197,7 @@ static int load_image_lzo(struct swap_map_handle *handle,
 	for (thr = 0; thr < nr_threads; thr++)
 		memset(&data[thr], 0, offsetof(struct dec_data, go));
 
-	crc = kmalloc(sizeof(*crc), GFP_KERNEL);
+	crc = kvmalloc(sizeof(*crc), GFP_KERNEL);
 	if (!crc) {
 		printk(KERN_ERR "PM: Failed to allocate crc\n");
 		ret = -ENOMEM;
@@ -1462,7 +1462,7 @@ out_clean:
 	if (crc) {
 		if (crc->thr)
 			kthread_stop(crc->thr);
-		kfree(crc);
+		kvfree(crc);
 	}
 	if (data) {
 		for (thr = 0; thr < nr_threads; thr++)

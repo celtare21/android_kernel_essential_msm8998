@@ -54,7 +54,6 @@
 #include <linux/hashtable.h>
 #include <linux/pid_namespace.h>
 #include <linux/idr.h>
-#include <linux/vmalloc.h> /* TODO: replace with more sophisticated array */
 #include <linux/kthread.h>
 #include <linux/delay.h>
 #include <linux/cpuset.h>
@@ -4154,13 +4153,9 @@ struct cgroup_pidlist {
  * than kmalloc will give memory for; in such cases, we use vmalloc/vfree.
  * TODO: replace with a kernel-wide solution to this problem
  */
-#define PIDLIST_TOO_LARGE(c) ((c) * sizeof(pid_t) > (PAGE_SIZE * 2))
 static void *pidlist_allocate(int count)
 {
-	if (PIDLIST_TOO_LARGE(count))
-		return vmalloc(count * sizeof(pid_t));
-	else
-		return kmalloc(count * sizeof(pid_t), GFP_KERNEL);
+	return kvmalloc(count * sizeof(pid_t), GFP_KERNEL);
 }
 
 static void pidlist_free(void *p)
