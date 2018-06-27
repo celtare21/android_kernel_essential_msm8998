@@ -589,8 +589,8 @@ enum {
 #define EXT4_ENCRYPTION_MODE_AES_256_GCM	2
 #define EXT4_ENCRYPTION_MODE_AES_256_CBC	3
 #define EXT4_ENCRYPTION_MODE_AES_256_CTS	4
-#define EXT4_ENCRYPTION_MODE_PRIVATE		127
 #define EXT4_ENCRYPTION_MODE_AES_256_HEH	126
+#define EXT4_ENCRYPTION_MODE_PRIVATE		127
 
 #include "ext4_crypto.h"
 
@@ -2336,23 +2336,9 @@ static inline void ext4_fname_free_filename(struct ext4_filename *fname) { }
 /* crypto_key.c */
 void ext4_free_crypt_info(struct ext4_crypt_info *ci);
 void ext4_free_encryption_info(struct inode *inode, struct ext4_crypt_info *ci);
-int _ext4_get_encryption_info(struct inode *inode);
 
 #ifdef CONFIG_EXT4_FS_ENCRYPTION
 int ext4_has_encryption_key(struct inode *inode);
-
-static inline int ext4_get_encryption_info(struct inode *inode)
-{
-	struct ext4_crypt_info *ci = EXT4_I(inode)->i_crypt_info;
-
-	if (!ci ||
-	    (ci->ci_keyring_key &&
-	     (ci->ci_keyring_key->flags & ((1 << KEY_FLAG_INVALIDATED) |
-					   (1 << KEY_FLAG_REVOKED) |
-					   (1 << KEY_FLAG_DEAD)))))
-		return _ext4_get_encryption_info(inode);
-	return 0;
-}
 
 static inline struct ext4_crypt_info *ext4_encryption_info(struct inode *inode)
 {
@@ -2366,6 +2352,8 @@ static inline int ext4_using_hardware_encryption(struct inode *inode)
 	return S_ISREG(inode->i_mode) && ci &&
 		ci->ci_data_mode == EXT4_ENCRYPTION_MODE_PRIVATE;
 }
+
+int ext4_get_encryption_info(struct inode *inode);
 
 #else
 static inline int ext4_has_encryption_key(struct inode *inode)
@@ -2604,6 +2592,9 @@ extern int ext4_alloc_flex_bg_array(struct super_block *sb,
 				    ext4_group_t ngroup);
 extern const char *ext4_decode_error(struct super_block *sb, int errno,
 				     char nbuf[16]);
+extern void ext4_mark_group_bitmap_corrupted(struct super_block *sb,
+					     ext4_group_t block_group,
+					     unsigned int flags);
 
 extern __printf(4, 5)
 void __ext4_error(struct super_block *, const char *, unsigned int,
@@ -2928,6 +2919,10 @@ struct ext4_group_info {
 #define EXT4_GROUP_INFO_WAS_TRIMMED_BIT		1
 #define EXT4_GROUP_INFO_BBITMAP_CORRUPT_BIT	2
 #define EXT4_GROUP_INFO_IBITMAP_CORRUPT_BIT	3
+#define EXT4_GROUP_INFO_BBITMAP_CORRUPT		\
+	(1 << EXT4_GROUP_INFO_BBITMAP_CORRUPT_BIT)
+#define EXT4_GROUP_INFO_IBITMAP_CORRUPT		\
+	(1 << EXT4_GROUP_INFO_IBITMAP_CORRUPT_BIT)
 
 #define EXT4_MB_GRP_NEED_INIT(grp)	\
 	(test_bit(EXT4_GROUP_INFO_NEED_INIT_BIT, &((grp)->bb_state)))
