@@ -2176,13 +2176,13 @@ static int alloc_histogram_buffers(void)
 	int ret = 0;
 
 	if (!blk_perf.read_hist)
-		blk_perf.read_hist = kzalloc(BLK_PERF_HIST_SIZE, GFP_KERNEL);
+		blk_perf.read_hist = kvzalloc(BLK_PERF_HIST_SIZE, GFP_KERNEL);
 
 	if (!blk_perf.write_hist)
-		blk_perf.write_hist = kzalloc(BLK_PERF_HIST_SIZE, GFP_KERNEL);
+		blk_perf.write_hist = kvzalloc(BLK_PERF_HIST_SIZE, GFP_KERNEL);
 
 	if (!blk_perf.flush_hist)
-		blk_perf.flush_hist = kzalloc(BLK_PERF_HIST_SIZE, GFP_KERNEL);
+		blk_perf.flush_hist = kvzalloc(BLK_PERF_HIST_SIZE, GFP_KERNEL);
 
 	if (!blk_perf.read_hist || !blk_perf.write_hist || !blk_perf.flush_hist)
 		ret = -ENOMEM;
@@ -2255,7 +2255,7 @@ static int blk_debug_buffer_alloc(u32 buffer_size)
 		ret = -EBUSY;
 		goto end;
 	}
-	blk_debug_buffer = kzalloc(buffer_size, GFP_KERNEL);
+	blk_debug_buffer = kvzalloc(buffer_size, GFP_KERNEL);
 	if (!blk_debug_buffer)
 		ret = -ENOMEM;
 end:
@@ -2267,7 +2267,7 @@ static int blk_perf_close(struct inode *inode, struct file *file)
 {
 	mutex_lock(&blk_perf_debug_buffer_mutex);
 	blk_debug_data_size = 0;
-	kfree(blk_debug_buffer);
+	kvfree(blk_debug_buffer);
 	blk_debug_buffer = NULL;
 	mutex_unlock(&blk_perf_debug_buffer_mutex);
 	return 0;
@@ -3759,7 +3759,7 @@ struct blk_plug_cb *blk_check_plugged(blk_plug_cb_fn unplug, void *data,
 
 	/* Not currently on the callback list */
 	BUG_ON(size < sizeof(*cb));
-	cb = kzalloc(size, GFP_ATOMIC);
+	cb = kvzalloc(size, GFP_ATOMIC);
 	if (cb) {
 		cb->data = data;
 		cb->callback = unplug;

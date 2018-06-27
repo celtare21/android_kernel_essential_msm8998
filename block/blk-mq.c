@@ -1444,7 +1444,7 @@ static void blk_mq_free_rq_map(struct blk_mq_tag_set *set,
 		__free_pages(page, page->private);
 	}
 
-	kfree(tags->rqs);
+	kvfree(tags->rqs);
 
 	blk_mq_free_tags(tags);
 }
@@ -1469,7 +1469,7 @@ static struct blk_mq_tags *blk_mq_init_rq_map(struct blk_mq_tag_set *set,
 
 	INIT_LIST_HEAD(&tags->page_list);
 
-	tags->rqs = kzalloc_node(set->queue_depth * sizeof(struct request *),
+	tags->rqs = kvzalloc_node(set->queue_depth * sizeof(struct request *),
 				 GFP_NOIO | __GFP_NOWARN | __GFP_NORETRY,
 				 set->numa_node);
 	if (!tags->rqs) {
@@ -1545,7 +1545,7 @@ fail:
 
 static void blk_mq_free_bitmap(struct blk_mq_ctxmap *bitmap)
 {
-	kfree(bitmap->map);
+	kvfree(bitmap->map);
 }
 
 static int blk_mq_alloc_bitmap(struct blk_mq_ctxmap *bitmap, int node)
@@ -1555,7 +1555,7 @@ static int blk_mq_alloc_bitmap(struct blk_mq_ctxmap *bitmap, int node)
 	bitmap->bits_per_word = bpw;
 
 	num_maps = ALIGN(nr_cpu_ids, bpw) / bpw;
-	bitmap->map = kzalloc_node(num_maps * sizeof(struct blk_align_bitmap),
+	bitmap->map = kvzalloc_node(num_maps * sizeof(struct blk_align_bitmap),
 					GFP_KERNEL, node);
 	if (!bitmap->map)
 		return -ENOMEM;
@@ -1702,7 +1702,7 @@ static int blk_mq_init_hctx(struct request_queue *q,
 	 * Allocate space for all possible cpus to avoid allocation at
 	 * runtime
 	 */
-	hctx->ctxs = kmalloc_node(nr_cpu_ids * sizeof(void *),
+	hctx->ctxs = kvmalloc_node(nr_cpu_ids * sizeof(void *),
 					GFP_KERNEL, node);
 	if (!hctx->ctxs)
 		goto unregister_cpu_notifier;
@@ -1729,14 +1729,14 @@ static int blk_mq_init_hctx(struct request_queue *q,
 	return 0;
 
  free_fq:
-	kfree(hctx->fq);
+	kvfree(hctx->fq);
  exit_hctx:
 	if (set->ops->exit_hctx)
 		set->ops->exit_hctx(hctx, hctx_idx);
  free_bitmap:
 	blk_mq_free_bitmap(&hctx->ctx_map);
  free_ctxs:
-	kfree(hctx->ctxs);
+	kvfree(hctx->ctxs);
  unregister_cpu_notifier:
 	blk_mq_unregister_cpu_notifier(&hctx->cpu_notifier);
 
@@ -1949,14 +1949,14 @@ void blk_mq_release(struct request_queue *q)
 	queue_for_each_hw_ctx(q, hctx, i) {
 		if (!hctx)
 			continue;
-		kfree(hctx->ctxs);
-		kfree(hctx);
+		kvfree(hctx->ctxs);
+		kvfree(hctx);
 	}
 
-	kfree(q->mq_map);
+	kvfree(q->mq_map);
 	q->mq_map = NULL;
 
-	kfree(q->queue_hw_ctx);
+	kvfree(q->queue_hw_ctx);
 
 	/* ctx kobj stays in queue_ctx */
 	free_percpu(q->queue_ctx);
@@ -1990,7 +1990,7 @@ struct request_queue *blk_mq_init_allocated_queue(struct blk_mq_tag_set *set,
 	if (!ctx)
 		return ERR_PTR(-ENOMEM);
 
-	hctxs = kmalloc_node(set->nr_hw_queues * sizeof(*hctxs), GFP_KERNEL,
+	hctxs = kvmalloc_node(set->nr_hw_queues * sizeof(*hctxs), GFP_KERNEL,
 			set->numa_node);
 
 	if (!hctxs)
@@ -2003,7 +2003,7 @@ struct request_queue *blk_mq_init_allocated_queue(struct blk_mq_tag_set *set,
 	for (i = 0; i < set->nr_hw_queues; i++) {
 		int node = blk_mq_hw_queue_to_node(map, i);
 
-		hctxs[i] = kzalloc_node(sizeof(struct blk_mq_hw_ctx),
+		hctxs[i] = kvzalloc_node(sizeof(struct blk_mq_hw_ctx),
 					GFP_KERNEL, node);
 		if (!hctxs[i])
 			goto err_hctxs;
@@ -2070,15 +2070,15 @@ struct request_queue *blk_mq_init_allocated_queue(struct blk_mq_tag_set *set,
 	return q;
 
 err_hctxs:
-	kfree(map);
+	kvfree(map);
 	for (i = 0; i < set->nr_hw_queues; i++) {
 		if (!hctxs[i])
 			break;
 		free_cpumask_var(hctxs[i]->cpumask);
-		kfree(hctxs[i]);
+		kvfree(hctxs[i]);
 	}
 err_map:
-	kfree(hctxs);
+	kvfree(hctxs);
 err_percpu:
 	free_percpu(ctx);
 	return ERR_PTR(-ENOMEM);
@@ -2251,7 +2251,7 @@ int blk_mq_alloc_tag_set(struct blk_mq_tag_set *set)
 		set->queue_depth = min(64U, set->queue_depth);
 	}
 
-	set->tags = kmalloc_node(set->nr_hw_queues *
+	set->tags = kvmalloc_node(set->nr_hw_queues *
 				 sizeof(struct blk_mq_tags *),
 				 GFP_KERNEL, set->numa_node);
 	if (!set->tags)
@@ -2265,7 +2265,7 @@ int blk_mq_alloc_tag_set(struct blk_mq_tag_set *set)
 
 	return 0;
 enomem:
-	kfree(set->tags);
+	kvfree(set->tags);
 	set->tags = NULL;
 	return -ENOMEM;
 }
@@ -2280,7 +2280,7 @@ void blk_mq_free_tag_set(struct blk_mq_tag_set *set)
 			blk_mq_free_rq_map(set, set->tags[i], i);
 	}
 
-	kfree(set->tags);
+	kvfree(set->tags);
 	set->tags = NULL;
 }
 EXPORT_SYMBOL(blk_mq_free_tag_set);

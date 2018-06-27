@@ -328,7 +328,7 @@ static struct blkg_policy_data *throtl_pd_alloc(gfp_t gfp, int node)
 	struct throtl_grp *tg;
 	int rw;
 
-	tg = kzalloc_node(sizeof(*tg), gfp, node);
+	tg = kvzalloc_node(sizeof(*tg), gfp, node);
 	if (!tg)
 		return NULL;
 
@@ -403,7 +403,7 @@ static void throtl_pd_free(struct blkg_policy_data *pd)
 	struct throtl_grp *tg = pd_to_tg(pd);
 
 	del_timer_sync(&tg->service_queue.pending_timer);
-	kfree(tg);
+	kvfree(tg);
 }
 
 static struct throtl_grp *
@@ -1568,7 +1568,7 @@ int blk_throtl_init(struct request_queue *q)
 	struct throtl_data *td;
 	int ret;
 
-	td = kzalloc_node(sizeof(*td), GFP_KERNEL, q->node);
+	td = kvzalloc_node(sizeof(*td), GFP_KERNEL, q->node);
 	if (!td)
 		return -ENOMEM;
 
@@ -1581,7 +1581,7 @@ int blk_throtl_init(struct request_queue *q)
 	/* activate policy */
 	ret = blkcg_activate_policy(q, &blkcg_policy_throtl);
 	if (ret)
-		kfree(td);
+		kvfree(td);
 	return ret;
 }
 
@@ -1590,7 +1590,7 @@ void blk_throtl_exit(struct request_queue *q)
 	BUG_ON(!q->td);
 	throtl_shutdown_wq(q);
 	blkcg_deactivate_policy(q, &blkcg_policy_throtl);
-	kfree(q->td);
+	kvfree(q->td);
 }
 
 static int __init throtl_init(void)

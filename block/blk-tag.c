@@ -39,13 +39,13 @@ void blk_free_tags(struct blk_queue_tag *bqt)
 		BUG_ON(find_first_bit(bqt->tag_map, bqt->max_depth) <
 							bqt->max_depth);
 
-		kfree(bqt->tag_index);
+		kvfree(bqt->tag_index);
 		bqt->tag_index = NULL;
 
-		kfree(bqt->tag_map);
+		kvfree(bqt->tag_map);
 		bqt->tag_map = NULL;
 
-		kfree(bqt);
+		kvfree(bqt);
 	}
 }
 EXPORT_SYMBOL(blk_free_tags);
@@ -98,12 +98,12 @@ init_tag_map(struct request_queue *q, struct blk_queue_tag *tags, int depth)
 		       __func__, depth);
 	}
 
-	tag_index = kzalloc(depth * sizeof(struct request *), GFP_ATOMIC);
+	tag_index = kvzalloc(depth * sizeof(struct request *), GFP_ATOMIC);
 	if (!tag_index)
 		goto fail;
 
 	nr_ulongs = ALIGN(depth, BITS_PER_LONG) / BITS_PER_LONG;
-	tag_map = kzalloc(nr_ulongs * sizeof(unsigned long), GFP_ATOMIC);
+	tag_map = kvzalloc(nr_ulongs * sizeof(unsigned long), GFP_ATOMIC);
 	if (!tag_map)
 		goto fail;
 
@@ -114,7 +114,7 @@ init_tag_map(struct request_queue *q, struct blk_queue_tag *tags, int depth)
 
 	return 0;
 fail:
-	kfree(tag_index);
+	kvfree(tag_index);
 	return -ENOMEM;
 }
 
@@ -135,7 +135,7 @@ static struct blk_queue_tag *__blk_queue_init_tags(struct request_queue *q,
 	tags->next_tag = 0;
 	return tags;
 fail:
-	kfree(tags);
+	kvfree(tags);
 	return NULL;
 }
 
@@ -242,8 +242,8 @@ int blk_queue_resize_tags(struct request_queue *q, int new_depth)
 	nr_ulongs = ALIGN(max_depth, BITS_PER_LONG) / BITS_PER_LONG;
 	memcpy(bqt->tag_map, tag_map, nr_ulongs * sizeof(unsigned long));
 
-	kfree(tag_index);
-	kfree(tag_map);
+	kvfree(tag_index);
+	kvfree(tag_map);
 	return 0;
 }
 EXPORT_SYMBOL(blk_queue_resize_tags);
