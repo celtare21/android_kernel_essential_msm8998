@@ -1165,7 +1165,7 @@ struct mdss_mdp_data *mdss_mdp_overlay_buf_alloc(struct msm_fb_data_type *mfd,
 		pr_debug("allocating %u bufs for fb%d\n",
 					BUF_POOL_SIZE, mfd->index);
 
-		buf = kzalloc(sizeof(*buf) * BUF_POOL_SIZE, GFP_KERNEL);
+		buf = kvzalloc(sizeof(*buf) * BUF_POOL_SIZE, GFP_KERNEL);
 		if (!buf) {
 			pr_err("Unable to allocate buffer pool\n");
 			return NULL;
@@ -2959,7 +2959,7 @@ static int mdss_mdp_overlay_get_fb_pipe(struct msm_fb_data_type *mfd,
 			return -ENODEV;
 		}
 
-		req = kzalloc(sizeof(struct mdp_overlay), GFP_KERNEL);
+		req = kvzalloc(sizeof(struct mdp_overlay), GFP_KERNEL);
 		if (!req) {
 			pr_err("not able to allocate memory for req\n");
 			return -ENOMEM;
@@ -4511,7 +4511,7 @@ static int mdss_mdp_hw_cursor_pipe_update(struct msm_fb_data_type *mfd,
 		goto done;
 	}
 
-	req = kzalloc(sizeof(struct mdp_overlay), GFP_KERNEL);
+	req = kvzalloc(sizeof(struct mdp_overlay), GFP_KERNEL);
 	if (!req) {
 		pr_err("not able to allocate memory for cursor req\n");
 		ret = -ENOMEM;
@@ -5241,7 +5241,7 @@ static int __handle_overlay_prepare(struct msm_fb_data_type *mfd,
 	}
 
 	if (sort_needed) {
-		sorted_ovs = kzalloc(num_ovs * sizeof(*ip_ovs), GFP_KERNEL);
+		sorted_ovs = kvzalloc(num_ovs * sizeof(*ip_ovs), GFP_KERNEL);
 		if (!sorted_ovs) {
 			pr_err("error allocating ovlist mem\n");
 			return -ENOMEM;
@@ -6379,7 +6379,7 @@ int mdss_mdp_overlay_init(struct msm_fb_data_type *mfd)
 	char timeline_name[32];
 	int rc;
 
-	mdp5_data = kzalloc(sizeof(struct mdss_overlay_private), GFP_KERNEL);
+	mdp5_data = kvzalloc(sizeof(struct mdss_overlay_private), GFP_KERNEL);
 	if (!mdp5_data) {
 		pr_err("fail to allocate mdp5 private data structure");
 		return -ENOMEM;

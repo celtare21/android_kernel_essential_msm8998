@@ -649,7 +649,7 @@ struct reg_bus_client *mdss_reg_bus_vote_client_create(char *client_name)
 		return ERR_PTR(-EINVAL);
 	}
 
-	client = kzalloc(sizeof(struct reg_bus_client), GFP_KERNEL);
+	client = kvzalloc(sizeof(struct reg_bus_client), GFP_KERNEL);
 	if (!client)
 		return ERR_PTR(-ENOMEM);
 
@@ -2990,7 +2990,7 @@ static int mdss_mdp_probe(struct platform_device *pdev)
 		goto probe_done;
 	}
 
-	mdss_mdp_hw.irq_info = kzalloc(sizeof(struct irq_info), GFP_KERNEL);
+	mdss_mdp_hw.irq_info = kvzalloc(sizeof(struct irq_info), GFP_KERNEL);
 	if (!mdss_mdp_hw.irq_info) {
 		pr_err("no mem to save irq info: kzalloc fail\n");
 		return -ENOMEM;
@@ -3141,17 +3141,17 @@ static int mdss_mdp_probe(struct platform_device *pdev)
 			mdss_mdp_footswitch_ctrl_splash(true);
 	}
 
-	mdp_intr_cb  = kcalloc(ARRAY_SIZE(mdp_irq_map),
+	mdp_intr_cb  = kvcalloc(ARRAY_SIZE(mdp_irq_map),
 			sizeof(struct intr_callback), GFP_KERNEL);
 	if (mdp_intr_cb == NULL)
 		return -ENOMEM;
 
-	mdss_res->mdp_irq_mask = kcalloc(ARRAY_SIZE(mdp_intr_reg),
+	mdss_res->mdp_irq_mask = kvcalloc(ARRAY_SIZE(mdp_intr_reg),
 			sizeof(u32), GFP_KERNEL);
 	if (mdss_res->mdp_irq_mask == NULL)
 		return -ENOMEM;
 
-	mdss_res->mdp_irq_raw = kcalloc(ARRAY_SIZE(mdp_intr_reg),
+	mdss_res->mdp_irq_raw = kvcalloc(ARRAY_SIZE(mdp_intr_reg),
 			sizeof(u32), GFP_KERNEL);
 	if (mdss_res->mdp_irq_raw == NULL) {
 		kvfree(mdss_res->mdp_irq_mask);
@@ -3159,7 +3159,7 @@ static int mdss_mdp_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 
-	mdss_res->mdp_irq_export = kcalloc(ARRAY_SIZE(mdp_intr_reg),
+	mdss_res->mdp_irq_export = kvcalloc(ARRAY_SIZE(mdp_intr_reg),
 			sizeof(u32), GFP_KERNEL);
 	if (mdss_res->mdp_irq_export == NULL) {
 		kvfree(mdss_res->mdp_irq_mask);
@@ -3729,19 +3729,19 @@ static int mdss_mdp_parse_dt_mixer(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	mixer_offsets = kzalloc(sizeof(u32) * nmixers, GFP_KERNEL);
+	mixer_offsets = kvzalloc(sizeof(u32) * nmixers, GFP_KERNEL);
 	if (!mixer_offsets) {
 		pr_err("no mem assigned: kzalloc fail\n");
 		return -ENOMEM;
 	}
 
-	dspp_offsets = kzalloc(sizeof(u32) * mdata->ndspp, GFP_KERNEL);
+	dspp_offsets = kvzalloc(sizeof(u32) * mdata->ndspp, GFP_KERNEL);
 	if (!dspp_offsets) {
 		pr_err("no mem assigned: kzalloc fail\n");
 		rc = -ENOMEM;
 		goto dspp_alloc_fail;
 	}
-	pingpong_offsets = kzalloc(sizeof(u32) * npingpong, GFP_KERNEL);
+	pingpong_offsets = kvzalloc(sizeof(u32) * npingpong, GFP_KERNEL);
 	if (!pingpong_offsets) {
 		pr_err("no mem assigned: kzalloc fail\n");
 		rc = -ENOMEM;
@@ -3861,7 +3861,7 @@ static int mdss_mdp_parse_dt_cdm(struct platform_device *pdev)
 		goto end;
 	}
 	pr_debug("%s: cdm len == %d\n", __func__, mdata->ncdm);
-	cdm_offsets = kzalloc(sizeof(u32) * mdata->ncdm, GFP_KERNEL);
+	cdm_offsets = kvzalloc(sizeof(u32) * mdata->ncdm, GFP_KERNEL);
 	if (!cdm_offsets) {
 		pr_err("no more memory for cdm offsets\n");
 		rc = -ENOMEM;
@@ -3927,7 +3927,7 @@ static int mdss_mdp_parse_dt_dsc(struct platform_device *pdev)
 	}
 	pr_debug("dsc len == %d\n", mdata->ndsc);
 
-	dsc_offsets = kzalloc(sizeof(u32) * mdata->ndsc, GFP_KERNEL);
+	dsc_offsets = kvzalloc(sizeof(u32) * mdata->ndsc, GFP_KERNEL);
 	if (!dsc_offsets) {
 		pr_err("no more memory for dsc offsets\n");
 		rc = -ENOMEM;
@@ -3976,7 +3976,7 @@ static int mdss_mdp_parse_dt_wb(struct platform_device *pdev)
 	nwb_offsets =  mdss_mdp_parse_dt_prop_len(pdev,
 			"qcom,mdss-wb-off");
 
-	wb_offsets = kzalloc(sizeof(u32) * nwb_offsets, GFP_KERNEL);
+	wb_offsets = kvzalloc(sizeof(u32) * nwb_offsets, GFP_KERNEL);
 	if (!wb_offsets) {
 		pr_err("no more mem for writeback offsets\n");
 		return -ENOMEM;
@@ -4017,7 +4017,7 @@ static int mdss_mdp_parse_dt_ctl(struct platform_device *pdev)
 		goto parse_done;
 	}
 
-	ctl_offsets = kzalloc(sizeof(u32) * mdata->nctl, GFP_KERNEL);
+	ctl_offsets = kvzalloc(sizeof(u32) * mdata->nctl, GFP_KERNEL);
 	if (!ctl_offsets) {
 		pr_err("no more mem for ctl offsets\n");
 		return -ENOMEM;
@@ -4050,7 +4050,7 @@ static int mdss_mdp_parse_dt_video_intf(struct platform_device *pdev)
 	if (count == 0)
 		return -EINVAL;
 
-	offsets = kzalloc(sizeof(u32) * count, GFP_KERNEL);
+	offsets = kvzalloc(sizeof(u32) * count, GFP_KERNEL);
 	if (!offsets) {
 		pr_err("no mem assigned for video intf\n");
 		return -ENOMEM;
@@ -4256,7 +4256,7 @@ static void mdss_mdp_parse_vbif_qos(struct platform_device *pdev)
 	mdata->npriority_lvl = mdss_mdp_parse_dt_prop_len(pdev,
 			"qcom,mdss-vbif-qos-rt-setting");
 	if (mdata->npriority_lvl == MDSS_VBIF_QOS_REMAP_ENTRIES) {
-		mdata->vbif_rt_qos = kzalloc(sizeof(u32) *
+		mdata->vbif_rt_qos = kvzalloc(sizeof(u32) *
 				mdata->npriority_lvl, GFP_KERNEL);
 		if (!mdata->vbif_rt_qos) {
 			pr_err("no memory for real time qos_priority\n");
@@ -4291,7 +4291,7 @@ static void mdss_mdp_parse_vbif_qos(struct platform_device *pdev)
 	}
 
 	if (mdata->npriority_lvl == MDSS_VBIF_QOS_REMAP_ENTRIES) {
-		mdata->vbif_nrt_qos = kzalloc(sizeof(u32) *
+		mdata->vbif_nrt_qos = kvzalloc(sizeof(u32) *
 				mdata->npriority_lvl, GFP_KERNEL);
 		if (!mdata->vbif_nrt_qos) {
 			pr_err("no memory for non real time qos_priority\n");
@@ -4560,7 +4560,7 @@ static int mdss_mdp_parse_dt_misc(struct platform_device *pdev)
 					"qcom,mdss-clk-levels");
 
 	if (mdata->nclk_lvl) {
-		mdata->clock_levels = kzalloc(sizeof(u32) * mdata->nclk_lvl,
+		mdata->clock_levels = kvzalloc(sizeof(u32) * mdata->nclk_lvl,
 							GFP_KERNEL);
 		if (!mdata->clock_levels) {
 			pr_err("no mem assigned for mdata clock_levels\n");
@@ -4617,7 +4617,7 @@ static int mdss_mdp_parse_dt_ad_cfg(struct platform_device *pdev)
 	mdata->has_wb_ad = of_property_read_bool(pdev->dev.of_node,
 		"qcom,mdss-has-wb-ad");
 
-	ad_offsets = kzalloc(sizeof(u32) * mdata->nad_cfgs, GFP_KERNEL);
+	ad_offsets = kvzalloc(sizeof(u32) * mdata->nad_cfgs, GFP_KERNEL);
 	if (!ad_offsets) {
 		pr_err("no mem assigned: kzalloc fail\n");
 		return -ENOMEM;

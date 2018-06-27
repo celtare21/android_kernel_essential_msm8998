@@ -902,7 +902,7 @@ static ssize_t mdss_dsi_cmd_write(struct file *file, const char __user *p,
 
 	/* Allocate memory for the received string */
 	blen = count + (pcmds->sblen);
-	string_buf = krealloc(pcmds->string_buf, blen + 1, GFP_KERNEL);
+	string_buf = kvrealloc(pcmds->string_buf, blen + 1, GFP_KERNEL);
 	if (!string_buf) {
 		pr_err("%s: Failed to allocate memory\n", __func__);
 		mutex_unlock(&pcmds->dbg_mutex);
@@ -943,7 +943,7 @@ static int mdss_dsi_cmd_flush(struct file *file, fl_owner_t id)
 	 * 3 bytes per number, and 2 bytes for the last one
 	 */
 	blen = ((pcmds->sblen) + 2) / 3;
-	buf = kzalloc(blen, GFP_KERNEL);
+	buf = kvzalloc(blen, GFP_KERNEL);
 	if (!buf) {
 		pr_err("%s: Failed to allocate memory\n", __func__);
 		kvfree(pcmds->string_buf);
@@ -1037,7 +1037,7 @@ static int mdss_dsi_debugfs_setup(struct mdss_panel_data *pdata,
 	ctrl_pdata = container_of(pdata, struct mdss_dsi_ctrl_pdata,
 				panel_data);
 
-	dfs = kzalloc(sizeof(*dfs), GFP_KERNEL);
+	dfs = kvzalloc(sizeof(*dfs), GFP_KERNEL);
 	if (!dfs) {
 		pr_err("%s: No memory to create dsi ctrl debugfs info",
 			__func__);
@@ -1159,7 +1159,7 @@ static int _mdss_dsi_refresh_cmd(struct buf_data *new_cmds,
 	}
 
 	/* Reallocate space for dcs commands */
-	cmds = kzalloc(cnt * sizeof(struct dsi_cmd_desc), GFP_KERNEL);
+	cmds = kvzalloc(cnt * sizeof(struct dsi_cmd_desc), GFP_KERNEL);
 	if (!cmds) {
 		pr_err("%s: Failed to allocate memory\n", __func__);
 		return -ENOMEM;
@@ -4123,7 +4123,7 @@ static int mdss_dsi_irq_init(struct device *dev, int irq_no,
 	}
 
 	disable_irq(irq_no);
-	ctrl->dsi_hw->irq_info = kzalloc(sizeof(struct irq_info), GFP_KERNEL);
+	ctrl->dsi_hw->irq_info = kvzalloc(sizeof(struct irq_info), GFP_KERNEL);
 	if (!ctrl->dsi_hw->irq_info) {
 		pr_err("no mem to save irq info: kzalloc fail\n");
 		return -ENOMEM;

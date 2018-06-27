@@ -4836,7 +4836,7 @@ int mdss_mdp_gamut_config(struct msm_fb_data_type *mfd,
 		addr = mdss_mdp_get_dspp_addr_off(dspp_num) +
 			  MDSS_MDP_REG_DSPP_GAMUT_BASE;
 		for (i = 0; i < MDP_GAMUT_TABLE_NUM; i++) {
-			r_tbl[i] = kzalloc(
+			r_tbl[i] = kvzalloc(
 				sizeof(uint16_t) * config->tbl_size[i],
 				GFP_KERNEL);
 			if (!r_tbl[i]) {
@@ -4860,7 +4860,7 @@ int mdss_mdp_gamut_config(struct msm_fb_data_type *mfd,
 			}
 		}
 		for (i = 0; i < MDP_GAMUT_TABLE_NUM; i++) {
-			g_tbl[i] = kzalloc(
+			g_tbl[i] = kvzalloc(
 				sizeof(uint16_t) * config->tbl_size[i],
 				GFP_KERNEL);
 			if (!g_tbl[i]) {
@@ -4884,7 +4884,7 @@ int mdss_mdp_gamut_config(struct msm_fb_data_type *mfd,
 			}
 		}
 		for (i = 0; i < MDP_GAMUT_TABLE_NUM; i++) {
-			b_tbl[i] = kzalloc(
+			b_tbl[i] = kvzalloc(
 				sizeof(uint16_t) * config->tbl_size[i],
 				GFP_KERNEL);
 			if (!b_tbl[i]) {
@@ -5622,7 +5622,7 @@ int mdss_mdp_hist_collect(struct mdp_histogram_data *hist)
 			goto hist_collect_exit;
 		}
 		if (pipe_cnt > 1) {
-			hist_concat = kzalloc(HIST_V_SIZE * pipe_cnt *
+			hist_concat = kvzalloc(HIST_V_SIZE * pipe_cnt *
 						sizeof(u32), GFP_KERNEL);
 			if (!hist_concat) {
 				ret = -ENOMEM;
@@ -7209,7 +7209,7 @@ int mdss_mdp_calib_config_buffer(struct mdp_calib_config_buffer *cfg,
 	}
 
 	counter = cfg->size / (sizeof(uint32_t) * 2);
-	buff_org = buff = kzalloc(cfg->size, GFP_KERNEL);
+	buff_org = buff = kvzalloc(cfg->size, GFP_KERNEL);
 	if (buff == NULL) {
 		pr_err("Config buffer allocation failed\n");
 		return ret;
@@ -7545,7 +7545,7 @@ int mdss_mdp_copy_layer_pp_info(struct mdp_input_layer *layer)
 		return -EFAULT;
 	}
 
-	pp_info = kmalloc(sizeof(struct mdp_overlay_pp_params),
+	pp_info = kvmalloc(sizeof(struct mdp_overlay_pp_params),
 			GFP_KERNEL);
 	if (!pp_info)
 		return -ENOMEM;

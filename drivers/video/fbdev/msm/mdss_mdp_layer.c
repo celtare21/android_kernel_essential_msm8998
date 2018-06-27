@@ -2463,7 +2463,7 @@ static int __validate_layers(struct msm_fb_data_type *mfd,
 
 	layer_list = commit->input_layers;
 
-	validate_info_list = kcalloc(layer_count, sizeof(*validate_info_list),
+	validate_info_list = kvcalloc(layer_count, sizeof(*validate_info_list),
 				     GFP_KERNEL);
 	if (!validate_info_list) {
 		ret = -ENOMEM;
@@ -2844,7 +2844,7 @@ int mdss_mdp_layer_pre_commit(struct msm_fb_data_type *mfd,
 		return 0;
 	}
 
-	validate_info_list = kcalloc(layer_count, sizeof(*validate_info_list),
+	validate_info_list = kvcalloc(layer_count, sizeof(*validate_info_list),
 				     GFP_KERNEL);
 	if (!validate_info_list)
 		return -ENOMEM;
@@ -3055,7 +3055,7 @@ int mdss_mdp_layer_pre_commit_cwb(struct msm_fb_data_type *mfd,
 	}
 
 	/* Add data to the cwb queue */
-	cwb_data = kzalloc(sizeof(struct mdss_mdp_wb_data), GFP_KERNEL);
+	cwb_data = kvzalloc(sizeof(struct mdss_mdp_wb_data), GFP_KERNEL);
 	if (!cwb_data)
 		return -ENOMEM;
 

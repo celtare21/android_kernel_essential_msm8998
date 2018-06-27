@@ -59,7 +59,7 @@ static int parse_dsi_cmds(struct mdss_livedisplay_ctx *mlc,
 	struct dsi_ctrl_hdr *dchdr;
 	int i, cnt;
 
-	buf = kzalloc(blen, GFP_KERNEL);
+	buf = kvzalloc(blen, GFP_KERNEL);
 	if (!buf)
 		return -ENOMEM;
 
@@ -90,7 +90,7 @@ static int parse_dsi_cmds(struct mdss_livedisplay_ctx *mlc,
 		goto exit_free;
 	}
 
-	pcmds->cmds = kzalloc(cnt * sizeof(struct dsi_cmd_desc),
+	pcmds->cmds = kvzalloc(cnt * sizeof(struct dsi_cmd_desc),
 			GFP_KERNEL);
 	if (!pcmds->cmds)
 		goto exit_free;
@@ -196,7 +196,7 @@ int mdss_livedisplay_update(struct mdss_dsi_ctrl_pdata *ctrl_pdata,
 		return 0;
 
 	memset(&dsi_cmds, 0, sizeof(struct dsi_panel_cmds));
-	cmd_buf = kzalloc(len + 1, GFP_KERNEL);
+	cmd_buf = kvzalloc(len + 1, GFP_KERNEL);
 	if (!cmd_buf)
 		return -ENOMEM;
 
@@ -479,7 +479,7 @@ int mdss_livedisplay_parse_dt(struct device_node *np, struct mdss_panel_info *pi
 	if (pinfo == NULL)
 		return -ENODEV;
 
-	mlc = kzalloc(sizeof(struct mdss_livedisplay_ctx), GFP_KERNEL);
+	mlc = kvzalloc(sizeof(struct mdss_livedisplay_ctx), GFP_KERNEL);
 	mutex_init(&mlc->lock);
 
 	link_state = of_get_property(np, "cm,mdss-livedisplay-command-state", NULL);

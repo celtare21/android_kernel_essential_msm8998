@@ -1019,7 +1019,7 @@ static int mdss_fb_input_connect(struct input_handler *handler,
 	int rc;
 	struct input_handle *handle;
 
-	handle = kzalloc(sizeof(*handle), GFP_KERNEL);
+	handle = kvzalloc(sizeof(*handle), GFP_KERNEL);
 	if (!handle)
 		return -ENOMEM;
 
@@ -1079,7 +1079,7 @@ static int mdss_fb_register_input_handler(struct msm_fb_data_type *mfd)
 	if (mfd->input_handler)
 		return -EINVAL;
 
-	handler = kzalloc(sizeof(*handler), GFP_KERNEL);
+	handler = kvzalloc(sizeof(*handler), GFP_KERNEL);
 	if (!handler)
 		return -ENOMEM;
 
@@ -3914,7 +3914,7 @@ static int mdss_fb_check_var(struct fb_var_screeninfo *var,
 	} else if (mfd->panel_info && !(var->activate & FB_ACTIVATE_TEST)) {
 		struct mdss_panel_info *panel_info;
 		int rc;
-		panel_info = kzalloc(sizeof(struct mdss_panel_info),
+		panel_info = kvzalloc(sizeof(struct mdss_panel_info),
 				GFP_KERNEL);
 		if (!panel_info)
 			return -ENOMEM;
@@ -4517,9 +4517,9 @@ static int __mdss_fb_scaler_handler(struct mdp_input_layer *layer)
 	}
 
 	if (layer->flags & MDP_LAYER_ENABLE_PIXEL_EXT) {
-		scale = kzalloc(sizeof(struct mdp_scale_data_v2),
+		scale = kvzalloc(sizeof(struct mdp_scale_data_v2),
 				GFP_KERNEL);
-		pixel_ext = kzalloc(sizeof(struct mdp_scale_data),
+		pixel_ext = kvzalloc(sizeof(struct mdp_scale_data),
 				GFP_KERNEL);
 		if (!scale || !pixel_ext) {
 			mdss_mdp_free_layer_pp_info(layer);
@@ -4536,7 +4536,7 @@ static int __mdss_fb_scaler_handler(struct mdp_input_layer *layer)
 		__mdss_fb_copy_pixel_ext(pixel_ext, scale);
 		layer->scale = scale;
 	} else if (layer->flags & MDP_LAYER_ENABLE_QSEED3_SCALE) {
-		scale = kzalloc(sizeof(struct mdp_scale_data_v2),
+		scale = kvzalloc(sizeof(struct mdp_scale_data_v2),
 				GFP_KERNEL);
 		if (!scale) {
 			mdss_mdp_free_layer_pp_info(layer);
@@ -4602,7 +4602,7 @@ static int __mdss_fb_copy_destscaler_data(struct fb_info *info,
 		commit->commit_v1.dest_scaler;
 	data_size = commit->commit_v1.dest_scaler_cnt *
 		sizeof(struct mdp_destination_scaler_data);
-	ds_data = kzalloc(data_size, GFP_KERNEL);
+	ds_data = kvzalloc(data_size, GFP_KERNEL);
 	if (!ds_data) {
 		ret = -ENOMEM;
 		goto err;
@@ -4623,7 +4623,7 @@ static int __mdss_fb_copy_destscaler_data(struct fb_info *info,
 			scale_data_user = to_user_ptr(ds_data[i].scale);
 			data_size = sizeof(struct mdp_scale_data_v2);
 
-			scale_data = kzalloc(data_size, GFP_KERNEL);
+			scale_data = kvzalloc(data_size, GFP_KERNEL);
 			if (!scale_data) {
 				ds_data[i].scale = 0;
 				ret = -ENOMEM;
@@ -4705,7 +4705,7 @@ static int mdss_fb_atomic_commit_ioctl(struct fb_info *info,
 	output_layer_user = commit.commit_v1.output_layer;
 	if (output_layer_user) {
 		buffer_size = sizeof(struct mdp_output_layer);
-		output_layer = kzalloc(buffer_size, GFP_KERNEL);
+		output_layer = kvzalloc(buffer_size, GFP_KERNEL);
 		if (!output_layer) {
 			pr_err("unable to allocate memory for output layer\n");
 			return -ENOMEM;
@@ -4728,7 +4728,7 @@ static int mdss_fb_atomic_commit_ioctl(struct fb_info *info,
 		goto err;
 	} else if (layer_count) {
 		buffer_size = sizeof(struct mdp_input_layer) * layer_count;
-		layer_list = kzalloc(buffer_size, GFP_KERNEL);
+		layer_list = kvzalloc(buffer_size, GFP_KERNEL);
 		if (!layer_list) {
 			pr_err("unable to allocate memory for layers\n");
 			ret = -ENOMEM;

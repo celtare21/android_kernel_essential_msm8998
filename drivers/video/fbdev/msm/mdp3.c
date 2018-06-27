@@ -1307,7 +1307,7 @@ int mdp3_irq_init(u32 irq_start)
 	struct mdss_hw *mdp3_hw;
 	mdp3_hw = &mdp3_res->mdp3_hw;
 
-	mdp3_hw->irq_info = kzalloc(sizeof(struct irq_info), GFP_KERNEL);
+	mdp3_hw->irq_info = kvzalloc(sizeof(struct irq_info), GFP_KERNEL);
 	if (!mdp3_hw->irq_info) {
 		pr_err("no mem to save irq info: kzalloc fail\n");
 		return -ENOMEM;
@@ -1683,7 +1683,7 @@ static struct mdp3_iommu_meta *mdp3_iommu_meta_create(struct ion_client *client,
 	struct mdp3_iommu_meta *meta;
 	int ret;
 
-	meta = kzalloc(sizeof(*meta), GFP_KERNEL);
+	meta = kvzalloc(sizeof(*meta), GFP_KERNEL);
 
 	if (!meta)
 		return ERR_PTR(-ENOMEM);

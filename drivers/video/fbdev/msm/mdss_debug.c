@@ -282,8 +282,8 @@ static ssize_t panel_debug_base_reg_read(struct file *file,
 	/* '0x' + 2 digit + blank = 5 bytes for each number */
 	reg_buf_len = (dbg->cnt * PANEL_REG_FORMAT_LEN)
 		    + PANEL_REG_ADDR_LEN + 1;
-	rx_buf = kzalloc(dbg->cnt, GFP_KERNEL);
-	panel_reg_buf = kzalloc(reg_buf_len, GFP_KERNEL);
+	rx_buf = kvzalloc(dbg->cnt, GFP_KERNEL);
+	panel_reg_buf = kvzalloc(reg_buf_len, GFP_KERNEL);
 
 	if (!rx_buf || !panel_reg_buf) {
 		pr_err("not enough memory to hold panel reg dump\n");
@@ -357,7 +357,7 @@ int panel_debug_register_base(const char *name, void __iomem *base,
 
 	mdd = mdata->debug_inf.debug_data;
 
-	dbg = kzalloc(sizeof(*dbg), GFP_KERNEL);
+	dbg = kvzalloc(sizeof(*dbg), GFP_KERNEL);
 	if (!dbg)
 		return -ENOMEM;
 
@@ -569,7 +569,7 @@ static ssize_t mdss_debug_base_reg_read(struct file *file,
 
 		dbg->buf_len = sizeof(dump_buf) *
 			DIV_ROUND_UP(dbg->cnt, ROW_BYTES);
-		dbg->buf = kzalloc(dbg->buf_len, GFP_KERNEL);
+		dbg->buf = kvzalloc(dbg->buf_len, GFP_KERNEL);
 
 		if (!dbg->buf) {
 			pr_err("not enough memory to hold reg dump\n");
@@ -657,7 +657,7 @@ int mdss_debug_register_base(const char *name, void __iomem *base,
 
 	mdd = mdata->debug_inf.debug_data;
 
-	dbg = kzalloc(sizeof(*dbg), GFP_KERNEL);
+	dbg = kvzalloc(sizeof(*dbg), GFP_KERNEL);
 	if (!dbg)
 		return -ENOMEM;
 
@@ -746,7 +746,7 @@ static int parse_dt_xlog_dump_list(const u32 *arr, int count,
 	pp = of_find_property(pdev->dev.of_node, xin_prop, &total_xin_ids);
 	if (pp && total_xin_ids > 0) {
 		total_xin_ids /= sizeof(u32);
-		offsets = kcalloc(total_xin_ids, sizeof(u32), GFP_KERNEL);
+		offsets = kvcalloc(total_xin_ids, sizeof(u32), GFP_KERNEL);
 		if (offsets) {
 			rc = of_property_read_u32_array(pdev->dev.of_node,
 				xin_prop, offsets, total_xin_ids);
@@ -760,7 +760,7 @@ static int parse_dt_xlog_dump_list(const u32 *arr, int count,
 	}
 
 	for (i = 0, len = count * 2; i < len; i += 2) {
-		xlog_node = kzalloc(sizeof(*xlog_node), GFP_KERNEL);
+		xlog_node = kvzalloc(sizeof(*xlog_node), GFP_KERNEL);
 		if (!xlog_node)
 			return -ENOMEM;
 
@@ -1235,7 +1235,7 @@ int mdss_debugfs_init(struct mdss_data_type *mdata)
 		return -EBUSY;
 	}
 
-	mdd = kzalloc(sizeof(*mdd), GFP_KERNEL);
+	mdd = kvzalloc(sizeof(*mdd), GFP_KERNEL);
 	if (!mdd) {
 		pr_err("no memory to create mdss debug data\n");
 		return -ENOMEM;

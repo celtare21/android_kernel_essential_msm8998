@@ -356,7 +356,7 @@ static int cec_msg_recv(void *data, struct cec_msg *msg)
 		goto end;
 	}
 
-	msg_node = kzalloc(sizeof(*msg_node), GFP_KERNEL);
+	msg_node = kvzalloc(sizeof(*msg_node), GFP_KERNEL);
 	if (!msg_node) {
 		ret = -ENOMEM;
 		goto end;
@@ -768,7 +768,7 @@ void *cec_abstract_init(struct cec_abstract_init_data *init_data)
 		goto end;
 	}
 
-	ctl = kzalloc(sizeof(*ctl), GFP_KERNEL);
+	ctl = kvzalloc(sizeof(*ctl), GFP_KERNEL);
 	if (!ctl) {
 		ret = -ENOMEM;
 		goto end;
