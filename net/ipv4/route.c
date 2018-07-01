@@ -117,15 +117,15 @@
 #define RT_FL_TOS(oldflp4) \
 	((oldflp4)->flowi4_tos & (IPTOS_RT_MASK | RTO_ONLINK))
 
-#define RT_GC_TIMEOUT (300*100)
+#define RT_GC_TIMEOUT (300*1000)
 
 static int ip_rt_max_size;
 static int ip_rt_redirect_number __read_mostly	= 9;
-static int ip_rt_redirect_load __read_mostly	= 100 / 50;
-static int ip_rt_redirect_silence __read_mostly	= ((100 / 50) << (9 + 1));
-static int ip_rt_error_cost __read_mostly	= 100;
-static int ip_rt_error_burst __read_mostly	= 5 * 100;
-static int ip_rt_mtu_expires __read_mostly	= 10 * 60 * 100;
+static int ip_rt_redirect_load __read_mostly	= 1000 / 50;
+static int ip_rt_redirect_silence __read_mostly	= ((1000 / 50) << (9 + 1));
+static int ip_rt_error_cost __read_mostly	= 1000;
+static int ip_rt_error_burst __read_mostly	= 5 * 1000;
+static int ip_rt_mtu_expires __read_mostly	= 10 * 60 * 1000;
 static u32 ip_rt_min_pmtu __read_mostly		= 512 + 20 + 20;
 static int ip_rt_min_advmss __read_mostly	= 256;
 
@@ -2679,8 +2679,8 @@ void ip_rt_multicast_event(struct in_device *in_dev)
 }
 
 #ifdef CONFIG_SYSCTL
-static int ip_rt_gc_interval __read_mostly  = 60 * 100;
-static int ip_rt_gc_min_interval __read_mostly	= 100 / 2;
+static int ip_rt_gc_interval __read_mostly  = 60 * 1000;
+static int ip_rt_gc_min_interval __read_mostly	= 1000 / 2;
 static int ip_rt_gc_elasticity __read_mostly	= 8;
 
 static int ipv4_sysctl_rtcache_flush(struct ctl_table *__ctl, int write,

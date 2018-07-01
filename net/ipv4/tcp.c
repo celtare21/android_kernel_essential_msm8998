@@ -2513,7 +2513,7 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
 		if (val < 1 || val > MAX_TCP_KEEPIDLE)
 			err = -EINVAL;
 		else {
-			tp->keepalive_time = val * 100;
+			tp->keepalive_time = val * 1000;
 			if (sock_flag(sk, SOCK_KEEPOPEN) &&
 			    !((1 << sk->sk_state) &
 			      (TCPF_CLOSE | TCPF_LISTEN))) {
@@ -2530,7 +2530,7 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
 		if (val < 1 || val > MAX_TCP_KEEPINTVL)
 			err = -EINVAL;
 		else
-			tp->keepalive_intvl = val * 100;
+			tp->keepalive_intvl = val * 1000;
 		break;
 	case TCP_KEEPCNT:
 		if (val < 1 || val > MAX_TCP_KEEPCNT)
@@ -2555,17 +2555,17 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
 	case TCP_LINGER2:
 		if (val < 0)
 			tp->linger2 = -1;
-		else if (val > sysctl_tcp_fin_timeout / 100)
+		else if (val > sysctl_tcp_fin_timeout / 1000)
 			tp->linger2 = 0;
 		else
-			tp->linger2 = val * 100;
+			tp->linger2 = val * 1000;
 		break;
 
 	case TCP_DEFER_ACCEPT:
 		/* Translate value in seconds to number of retransmits */
 		icsk->icsk_accept_queue.rskq_defer_accept =
-			secs_to_retrans(val, TCP_TIMEOUT_INIT / 100,
-					TCP_RTO_MAX / 100);
+			secs_to_retrans(val, TCP_TIMEOUT_INIT / 1000,
+					TCP_RTO_MAX / 1000);
 		break;
 
 	case TCP_WINDOW_CLAMP:
@@ -2795,10 +2795,10 @@ static int do_tcp_getsockopt(struct sock *sk, int level,
 		val = !!(tp->nonagle&TCP_NAGLE_CORK);
 		break;
 	case TCP_KEEPIDLE:
-		val = keepalive_time_when(tp) / 100;
+		val = keepalive_time_when(tp) / 1000;
 		break;
 	case TCP_KEEPINTVL:
-		val = keepalive_intvl_when(tp) / 100;
+		val = keepalive_intvl_when(tp) / 1000;
 		break;
 	case TCP_KEEPCNT:
 		val = keepalive_probes(tp);
@@ -2809,11 +2809,11 @@ static int do_tcp_getsockopt(struct sock *sk, int level,
 	case TCP_LINGER2:
 		val = tp->linger2;
 		if (val >= 0)
-			val = (val ? : sysctl_tcp_fin_timeout) / 100;
+			val = (val ? : sysctl_tcp_fin_timeout) / 1000;
 		break;
 	case TCP_DEFER_ACCEPT:
 		val = retrans_to_secs(icsk->icsk_accept_queue.rskq_defer_accept,
-				      TCP_TIMEOUT_INIT / 100, TCP_RTO_MAX / 100);
+				      TCP_TIMEOUT_INIT / 1000, TCP_RTO_MAX / 1000);
 		break;
 	case TCP_WINDOW_CLAMP:
 		val = tp->window_clamp;

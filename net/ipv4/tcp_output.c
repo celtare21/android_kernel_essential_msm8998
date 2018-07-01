@@ -1847,7 +1847,7 @@ static inline void tcp_mtu_check_reprobe(struct sock *sk)
 
 	interval = net->ipv4.sysctl_tcp_probe_interval;
 	delta = tcp_time_stamp - icsk->icsk_mtup.probe_timestamp;
-	if (unlikely(delta >= interval * 100)) {
+	if (unlikely(delta >= interval * 1000)) {
 		int mss = tcp_current_mss(sk);
 
 		/* Update current search range */
@@ -3171,7 +3171,7 @@ static int tcp_send_syn_data(struct sock *sk, struct sk_buff *syn)
 			       &syn_loss, &last_syn_loss);
 	/* Recurring FO SYN losses: revert to regular handshake temporarily */
 	if (syn_loss > 1 &&
-	    time_before(jiffies, last_syn_loss + (60*100 << syn_loss))) {
+	    time_before(jiffies, last_syn_loss + (60*1000 << syn_loss))) {
 		fo->cookie.len = -1;
 		goto fallback;
 	}
@@ -3308,7 +3308,7 @@ void tcp_send_delayed_ack(struct sock *sk)
 
 	if (ato > TCP_DELACK_MIN) {
 		const struct tcp_sock *tp = tcp_sk(sk);
-		int max_ato = 100 / 2;
+		int max_ato = 1000 / 2;
 
 		if (icsk->icsk_ack.pingpong ||
 		    (icsk->icsk_ack.pending & ICSK_ACK_PUSHED))

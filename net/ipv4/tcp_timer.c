@@ -633,7 +633,7 @@ static void tcp_keepalive_timer (unsigned long data)
 	bh_lock_sock(sk);
 	if (sock_owned_by_user(sk)) {
 		/* Try again later. */
-		inet_csk_reset_keepalive_timer (sk, 100/20);
+		inet_csk_reset_keepalive_timer (sk, 1000/20);
 		goto out;
 	}
 
