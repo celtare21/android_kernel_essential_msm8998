@@ -1769,10 +1769,9 @@ static void blk_mq_init_cpu_queues(struct request_queue *q,
 	}
 }
 
-static void blk_mq_map_swqueue(struct request_queue *q,
-			       const struct cpumask *online_mask)
+static void blk_mq_map_swqueue(struct request_queue *q)
 {
-	unsigned int i;
+	unsigned int i, hctx_idx;
 	struct blk_mq_hw_ctx *hctx;
 	struct blk_mq_ctx *ctx;
 	struct blk_mq_tag_set *set = q->tag_set;
@@ -1788,13 +1787,28 @@ static void blk_mq_map_swqueue(struct request_queue *q,
 	}
 
 	/*
-	 * Map software to hardware queues
+	 * Map software to hardware queues.
+	 *
+	 * If the cpu isn't present, the cpu is mapped to first hctx.
 	 */
 	for_each_possible_cpu(i) {
+		hctx_idx = q->mq_map[i];
+		/* unmapped hw queue can be remapped after CPU topo changed */
+		if (!set->tags[hctx_idx] &&
+		    !__blk_mq_alloc_rq_map(set, hctx_idx)) {
+			/*
+			 * If tags initialization fail for some hctx,
+			 * that hctx won't be brought online.  In this
+			 * case, remap the current ctx to hctx[0] which
+			 * is guaranteed to always have tags allocated
+			 */
+			q->mq_map[i] = 0;
+		}
+
 		ctx = per_cpu_ptr(q->queue_ctx, i);
-		hctx = q->mq_ops->map_queue(q, i);
-		if (cpumask_test_cpu(i, online_mask))
-			cpumask_set_cpu(i, hctx->cpumask);
+		hctx = blk_mq_map_queue(q, i);
+
+		cpumask_set_cpu(i, hctx->cpumask);
 		ctx->index_hw = hctx->nr_ctx;
 		hctx->ctxs[hctx->nr_ctx++] = ctx;
 	}
@@ -1807,21 +1821,20 @@ static void blk_mq_map_swqueue(struct request_queue *q,
 		 * disable it and free the request entries.
 		 */
 		if (!hctx->nr_ctx) {
-			if (set->tags[i]) {
-				blk_mq_free_rq_map(set, set->tags[i], i);
-				set->tags[i] = NULL;
-			}
+			/* Never unmap queue 0.  We need it as a
+			 * fallback in case of a new remap fails
+			 * allocation
+			 */
+			if (i && set->tags[i])
+				blk_mq_free_map_and_requests(set, i);
+
 			hctx->tags = NULL;
 			continue;
 		}
 
-		/* unmapped hw queue can be remapped after CPU topo changed */
-		if (!set->tags[i])
-			set->tags[i] = blk_mq_init_rq_map(set, i);
 		hctx->tags = set->tags[i];
 		WARN_ON(!hctx->tags);
 
-		cpumask_copy(hctx->tags->cpumask, hctx->cpumask);
 		/*
 		 * Set the map size to the number of mapped software queues.
 		 * This is more accurate and more efficient than looping
@@ -1831,16 +1844,10 @@ static void blk_mq_map_swqueue(struct request_queue *q,
 
 		/*
 		 * Initialize batch roundrobin counts
-		 * Set next_cpu for only those hctxs that have an online CPU
-		 * in their cpumask field. For hctxs that belong to few online
-		 * and few offline CPUs, this will always provide one CPU from
-		 * online ones. For hctxs belonging to all offline CPUs, their
-		 * cpumask will be updated in reinit_notify.
 		 */
-		if (cpumask_first(hctx->cpumask) < nr_cpu_ids) {
-			hctx->next_cpu = cpumask_first(hctx->cpumask);
-			hctx->next_cpu_batch = BLK_MQ_CPU_WORK_BATCH;
-		}
+		hctx->next_cpu = cpumask_first_and(hctx->cpumask,
+				cpu_online_mask);
+		hctx->next_cpu_batch = BLK_MQ_CPU_WORK_BATCH;
 	}
 }
 
