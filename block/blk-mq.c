@@ -277,7 +277,7 @@ struct request *blk_mq_alloc_request_hctx(struct request_queue *q, int rw,
 	ctx = __blk_mq_get_ctx(q, cpumask_first(hctx->cpumask));
 
 	blk_mq_set_alloc_data(&alloc_data, q, flags, ctx, hctx);
-	rq = __blk_mq_alloc_request(&alloc_data, rw, 0);
+	rq = __blk_mq_alloc_request(&alloc_data, rw);
 	if (!rq) {
 		blk_queue_exit(q);
 		return ERR_PTR(-EWOULDBLOCK);
