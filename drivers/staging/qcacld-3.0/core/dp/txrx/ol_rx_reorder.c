@@ -30,7 +30,7 @@
 #include <qdf_nbuf.h>           /* qdf_nbuf_t, etc. */
 #include <qdf_mem.h>         /* qdf_mem_malloc */
 
-#include <linux/ieee80211.h>          /* IEEE80211_SEQ_MAX */
+#include <ieee80211.h>          /* IEEE80211_SEQ_MAX */
 
 /* external interfaces */
 #include <ol_txrx_api.h>        /* ol_txrx_pdev_handle */
@@ -467,6 +467,11 @@ static void ol_rx_reorder_detect_hole(struct ol_txrx_peer_t *peer,
 					uint32_t idx_start)
 {
 	uint32_t win_sz_mask, next_rel_idx, hole_size;
+
+	if (tid >= OL_TXRX_NUM_EXT_TIDS) {
+		ol_txrx_err("%s:  invalid tid, %u\n", __FUNCTION__, tid);
+		return;
+	}
 
 	if (peer->tids_next_rel_idx[tid] == INVALID_REORDER_INDEX)
 		return;

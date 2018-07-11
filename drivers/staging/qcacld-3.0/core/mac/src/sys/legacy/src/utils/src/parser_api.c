@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -303,7 +303,7 @@ populate_dot11f_chan_switch_wrapper(tpAniSirGlobal pMac,
 	/*
 	 * Add the VHT Transmit power Envelope Sublement.
 	 */
-	ie_ptr = lim_get_ie_ptr_new(pMac,
+	ie_ptr = wlan_cfg_get_ie_ptr(
 		psessionEntry->addIeParams.probeRespBCNData_buff,
 		psessionEntry->addIeParams.probeRespBCNDataLen,
 		DOT11F_EID_VHT_TRANSMIT_POWER_ENV, ONE_BYTE);
@@ -852,7 +852,6 @@ static void lim_log_operating_mode(tpAniSirGlobal pMac,
 static void lim_log_qos_map_set(tpAniSirGlobal pMac, tSirQosMapSet *pQosMapSet)
 {
 	uint8_t i;
-
 	if (pQosMapSet->num_dscp_exceptions > QOS_MAP_MAX_EX)
 		pQosMapSet->num_dscp_exceptions = QOS_MAP_MAX_EX;
 	pe_debug("num of dscp exceptions: %d",
@@ -1356,7 +1355,6 @@ populate_dot11f_ibss_params(tpAniSirGlobal pMac,
 			    tpPESession psessionEntry)
 {
 	uint32_t val = 0;
-
 	if (LIM_IS_IBSS_ROLE(psessionEntry)) {
 		if (wlan_cfg_get_int(pMac,
 				     WNI_CFG_IBSS_ATIM_WIN_SIZE,
@@ -1502,7 +1500,7 @@ populate_dot11f_rsn(tpAniSirGlobal pMac,
 			status = dot11f_unpack_ie_rsn(pMac, pRsnIe->rsnIEdata + idx + 2,   /* EID, length */
 						      pRsnIe->rsnIEdata[idx + 1],
 						      pDot11f, false);
-			if (!DOT11F_SUCCEEDED(status)) {
+			if (DOT11F_FAILED(status)) {
 				pe_err("Parse failure in Populate Dot11fRSN (0x%08x)",
 					status);
 				return eSIR_FAILURE;
@@ -2266,7 +2264,7 @@ static void update_esp_data(struct sir_esp_information *esp_information,
 
 	uint8_t *data;
 	int i = 0;
-	uint64_t total_elements;
+	int total_elements;
 	struct sir_esp_info *esp_info;
 
 	data = esp_indication->variable_data;
@@ -2360,6 +2358,7 @@ static void update_fils_data(struct sir_fils_indication *fils_ind,
 				 tDot11fIEfils_indication *fils_indication)
 {
 	uint8_t *data;
+	uint8_t remaining_data = fils_indication->num_variable_data;
 
 	data = fils_indication->variable_data;
 	fils_ind->is_present = true;
@@ -2372,18 +2371,37 @@ static void update_fils_data(struct sir_fils_indication *fils_ind,
 	fils_ind->is_pk_auth_supported =
 			fils_indication->is_pk_auth_supported;
 	if (fils_indication->is_cache_id_present) {
+		if (remaining_data < SIR_CACHE_IDENTIFIER_LEN) {
+			pe_err("Failed to copy Cache Identifier, Invalid remaining data %d",
+				remaining_data);
+			return;
+		}
 		fils_ind->cache_identifier.is_present = true;
 		qdf_mem_copy(fils_ind->cache_identifier.identifier,
 				data, SIR_CACHE_IDENTIFIER_LEN);
 		data = data + SIR_CACHE_IDENTIFIER_LEN;
+		remaining_data = remaining_data - SIR_CACHE_IDENTIFIER_LEN;
 	}
 	if (fils_indication->is_hessid_present) {
+		if (remaining_data < SIR_HESSID_LEN) {
+			pe_err("Failed to copy HESSID, Invalid remaining data %d",
+				remaining_data);
+			return;
+		}
 		fils_ind->hessid.is_present = true;
 		qdf_mem_copy(fils_ind->hessid.hessid,
 				data, SIR_HESSID_LEN);
 		data = data + SIR_HESSID_LEN;
+		remaining_data = remaining_data - SIR_HESSID_LEN;
 	}
 	if (fils_indication->realm_identifiers_cnt) {
+		if (remaining_data < (fils_indication->realm_identifiers_cnt *
+		    SIR_REALM_LEN)) {
+			pe_err("Failed to copy Realm Identifier, Invalid remaining data %d realm_cnt %d",
+				remaining_data,
+				fils_indication->realm_identifiers_cnt);
+			return;
+		}
 		fils_ind->realm_identifier.is_present = true;
 		fils_ind->realm_identifier.realm_cnt =
 			fils_indication->realm_identifiers_cnt;
@@ -2899,7 +2917,6 @@ sir_convert_assoc_req_frame2_struct(tpAniSirGlobal pMac,
 	}
 	if (ar->ExtCap.present) {
 		struct s_ext_cap *ext_cap;
-
 		qdf_mem_copy(&pAssocReq->ExtCap, &ar->ExtCap,
 			    sizeof(tDot11fIEExtCap));
 		ext_cap = (struct s_ext_cap *)&pAssocReq->ExtCap.bytes;
@@ -3173,8 +3190,7 @@ sir_convert_assoc_resp_frame2_struct(tpAniSirGlobal pMac,
 		for (cnt = 0; cnt < ar->num_WMMTSPEC; cnt++) {
 			qdf_mem_copy(&pAssocRsp->TSPECInfo[cnt],
 					&ar->WMMTSPEC[cnt],
-					(sizeof(tDot11fIEWMMTSPEC) *
-					 ar->num_WMMTSPEC));
+					sizeof(tDot11fIEWMMTSPEC));
 		}
 		pAssocRsp->tspecPresent = true;
 	}
@@ -3202,7 +3218,6 @@ sir_convert_assoc_resp_frame2_struct(tpAniSirGlobal pMac,
 
 	if (ar->ExtCap.present) {
 		struct s_ext_cap *ext_cap;
-
 		qdf_mem_copy(&pAssocRsp->ExtCap, &ar->ExtCap,
 				sizeof(tDot11fIEExtCap));
 		ext_cap = (struct s_ext_cap *)&pAssocRsp->ExtCap.bytes;
@@ -3410,7 +3425,6 @@ sir_convert_reassoc_req_frame2_struct(tpAniSirGlobal pMac,
 	}
 	if (ar.ExtCap.present) {
 		struct s_ext_cap *ext_cap;
-
 		qdf_mem_copy(&pAssocReq->ExtCap, &ar.ExtCap,
 			     sizeof(tDot11fIEExtCap));
 		ext_cap = (struct s_ext_cap *)&pAssocReq->ExtCap.bytes;
@@ -4246,7 +4260,7 @@ sir_convert_beacon_frame2_struct(tpAniSirGlobal pMac,
 		pBeaconStruct->channelNumber = pBeacon->HTInfo.primaryChannel;
 	} else {
 		pBeaconStruct->channelNumber = mappedRXCh;
-		pe_debug_rate_limited(30, "In Beacon No Channel info");
+		pe_debug("Channel info is not present in Beacon");
 	}
 
 	if (pBeacon->RSN.present) {
@@ -4347,6 +4361,7 @@ sir_convert_beacon_frame2_struct(tpAniSirGlobal pMac,
 	if (pBeacon->vendor_vht_ie.present) {
 		pBeaconStruct->vendor_vht_ie.sub_type =
 			pBeacon->vendor_vht_ie.sub_type;
+		pe_debug("Vendor Specific VHT caps present in Beacon Frame!");
 	}
 
 	if (pBeacon->vendor_vht_ie.VHTCaps.present) {
@@ -4361,6 +4376,9 @@ sir_convert_beacon_frame2_struct(tpAniSirGlobal pMac,
 	}
 	/* Update HS 2.0 Information Element */
 	if (pBeacon->hs20vendor_ie.present) {
+		pe_debug("HS20 Indication Element Present, rel#:%u, id:%u",
+			pBeacon->hs20vendor_ie.release_num,
+			pBeacon->hs20vendor_ie.hs_id_present);
 		qdf_mem_copy(&pBeaconStruct->hs20vendor_ie,
 			&pBeacon->hs20vendor_ie,
 			sizeof(tDot11fIEhs20vendor_ie) -
@@ -4898,7 +4916,6 @@ sir_convert_qos_map_configure_frame2_struct(tpAniSirGlobal pMac,
 {
 	tDot11fQosMapConfigure mapConfigure;
 	uint32_t status;
-
 	status =
 		dot11f_unpack_qos_map_configure(pMac, pFrame, nFrame,
 						&mapConfigure, false);
@@ -4927,7 +4944,6 @@ sir_convert_tpc_req_frame2_struct(tpAniSirGlobal pMac,
 {
 	tDot11fTPCRequest req;
 	uint32_t status;
-
 	qdf_mem_set((uint8_t *) pTpcReqFrame, sizeof(tSirMacTpcReqActionFrame),
 		    0);
 	status = dot11f_unpack_tpc_request(pMac, pFrame, nFrame, &req, false);
@@ -5120,7 +5136,6 @@ tSirRetStatus populate_dot11f_ese_cckm_opaque(tpAniSirGlobal pMac,
 					      tDot11fIEESECckmOpaque *pDot11f)
 {
 	int idx;
-
 	if (pCCKMie->length) {
 		idx = find_ie_location(pMac, (tpSirRSNie) pCCKMie,
 						 DOT11F_EID_ESECCKMOPAQUE);

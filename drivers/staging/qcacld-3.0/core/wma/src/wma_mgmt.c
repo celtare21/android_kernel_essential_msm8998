@@ -1235,9 +1235,9 @@ QDF_STATUS wma_send_peer_assoc(tp_wma_handle wma,
 	    ) {
 		cmd->peer_flags |= WMI_PEER_NEED_PTK_4_WAY;
 		WMA_LOGD("Acquire set key wake lock for %d ms",
-			WMA_VDEV_SET_KEY_WAKELOCK_TIMEOUT);
+			WMA_VDEV_SET_KEY_REQUEST_TIMEOUT);
 		wma_acquire_wakelock(&intr->vdev_set_key_wakelock,
-			WMA_VDEV_SET_KEY_WAKELOCK_TIMEOUT);
+			WMA_VDEV_SET_KEY_REQUEST_TIMEOUT);
 	}
 	if (params->wpa_rsn >> 1)
 		cmd->peer_flags |= WMI_PEER_NEED_GTK_2_WAY;
@@ -1325,12 +1325,12 @@ QDF_STATUS wma_send_peer_assoc(tp_wma_handle wma,
 
 	intr->nss = cmd->peer_nss;
 	cmd->peer_phymode = phymode;
-	WMA_LOGI("%s: vdev_id %d associd %d peer_flags %x nss %d phymode %d ht_caps %x",
-		 __func__, cmd->vdev_id, cmd->peer_associd, cmd->peer_flags,
-		 cmd->peer_nss, cmd->peer_phymode, cmd->peer_ht_caps);
-	WMA_LOGD("%s:listen_intval %d max_mpdu %d rate_caps %x peer_caps %x",
-		 __func__, cmd->peer_listen_intval, cmd->peer_max_mpdu,
+	WMA_LOGD("%s: vdev_id %d associd %d peer_flags %x rate_caps %x peer_caps %x",
+		 __func__,  cmd->vdev_id, cmd->peer_associd, cmd->peer_flags,
 		 cmd->peer_rate_caps, cmd->peer_caps);
+	WMA_LOGD("%s:listen_intval %d ht_caps %x max_mpdu %d nss %d phymode %d",
+		 __func__, cmd->peer_listen_intval, cmd->peer_ht_caps,
+		 cmd->peer_max_mpdu, cmd->peer_nss, cmd->peer_phymode);
 	WMA_LOGD("%s: peer_mpdu_density %d encr_type %d cmd->peer_vht_caps %x",
 		 __func__, cmd->peer_mpdu_density, params->encryptType,
 		 cmd->peer_vht_caps);
@@ -1739,14 +1739,13 @@ static QDF_STATUS wma_setup_install_key_cmd(tp_wma_handle wma_handle,
 
 	status = wmi_unified_setup_install_key_cmd(wma_handle->wmi_handle,
 								&params);
+
+
 	if (!key_params->unicast) {
 		/* Its GTK release the wake lock */
 		WMA_LOGD("Release set key wake lock");
 		wma_release_wakelock(&iface->vdev_set_key_wakelock);
 	}
-	/* install key was requested */
-	if (iface)
-		iface->is_waiting_for_key = false;
 
 	return status;
 }
@@ -2660,7 +2659,6 @@ void wma_send_beacon(tp_wma_handle wma, tpSendbeaconParams bcn_info)
 				return;
 			}
 			wma->interfaces[vdev_id].vdev_up = true;
-			WMA_LOGD(FL("Setting vdev_up flag to true"));
 			wma_set_sap_keepalive(wma, vdev_id);
 			wma_set_vdev_mgmt_rate(wma, vdev_id);
 		}
@@ -2719,25 +2717,6 @@ void wma_beacon_miss_handler(tp_wma_handle wma, uint32_t vdev_id, int32_t rssi)
 }
 
 /**
- * wma_get_status_str() - get string of tx status from firmware
- * @status: tx status
- *
- * Return: converted string of tx status
- */
-static const char *wma_get_status_str(uint32_t status)
-{
-	switch (status) {
-	default:
-		return "unknown";
-	CASE_RETURN_STRING(WMI_MGMT_TX_COMP_TYPE_COMPLETE_OK);
-	CASE_RETURN_STRING(WMI_MGMT_TX_COMP_TYPE_DISCARD);
-	CASE_RETURN_STRING(WMI_MGMT_TX_COMP_TYPE_INSPECT);
-	CASE_RETURN_STRING(WMI_MGMT_TX_COMP_TYPE_COMPLETE_NO_ACK);
-	CASE_RETURN_STRING(WMI_MGMT_TX_COMP_TYPE_MAX);
-	}
-}
-
-/**
  * wma_process_mgmt_tx_completion() - process mgmt completion
  * @wma_handle: wma handle
  * @desc_id: descriptor id
@@ -2761,8 +2740,7 @@ static int wma_process_mgmt_tx_completion(tp_wma_handle wma_handle,
 		return -EINVAL;
 	}
 
-	WMA_LOGD("%s: status: %s wmi_desc_id: %d", __func__,
-		wma_get_status_str(status), desc_id);
+	WMA_LOGD("%s: status: %d wmi_desc_id: %d", __func__, status, desc_id);
 
 	wmi_desc = (struct wmi_desc_t *)
 			(&wma_handle->wmi_desc_pool.array[desc_id]);
@@ -2898,23 +2876,27 @@ void wma_process_update_opmode(tp_wma_handle wma_handle,
 			       tUpdateVHTOpMode *update_vht_opmode)
 {
 	struct wma_txrx_node *iface;
-	wmi_channel_width ch_width;
+	uint16_t chan_mode;
 
 
 	iface = &wma_handle->interfaces[update_vht_opmode->smesessionId];
 	if (iface == NULL)
 		return;
 
-	ch_width = chanmode_to_chanwidth(iface->chanmode);
-	if (ch_width < update_vht_opmode->opMode) {
-		WMA_LOGE("%s: Invalid peer bw update %d, self bw %d",
-				__func__, update_vht_opmode->opMode,
-				ch_width);
+	chan_mode = wma_chan_phy_mode(cds_freq_to_chan(iface->mhz),
+				update_vht_opmode->opMode,
+				update_vht_opmode->dot11_mode);
+	if (MODE_UNKNOWN == chan_mode)
 		return;
-	}
 
-	WMA_LOGD("%s: opMode = %d, current_ch_width: %d", __func__,
-		 update_vht_opmode->opMode, ch_width);
+	WMA_LOGD("%s: opMode = %d, chanMode = %d, dot11mode = %d ",
+			__func__,
+			update_vht_opmode->opMode, chan_mode,
+			update_vht_opmode->dot11_mode);
+
+	wma_set_peer_param(wma_handle, update_vht_opmode->peer_mac,
+			WMI_PEER_PHYMODE, chan_mode,
+			update_vht_opmode->smesessionId);
 
 	wma_set_peer_param(wma_handle, update_vht_opmode->peer_mac,
 			WMI_PEER_CHWIDTH, update_vht_opmode->opMode,
@@ -3112,6 +3094,7 @@ void wma_hidden_ssid_vdev_restart(tp_wma_handle wma_handle,
 			       hidden_ssid_restart_in_progress, 0);
 		wma_remove_vdev_req(wma_handle, pReq->sessionId,
 					WMA_TARGET_REQ_TYPE_VDEV_STOP);
+		return;
 	}
 }
 
@@ -3481,6 +3464,7 @@ end:
 }
 
 #define RATE_LIMIT 16
+#define RESERVE_BYTES   100
 /**
  * wma_mgmt_rx_process() - process management rx frame.
  * @handle: wma handle
@@ -3603,10 +3587,6 @@ static int wma_mgmt_rx_process(void *handle, uint8_t *data,
 
 	rx_pkt->pkt_meta.roamCandidateInd = 0;
 
-	/* Copy per chain rssi to rx_pkt */
-	qdf_mem_copy(rx_pkt->pkt_meta.rssi_per_chain, hdr->rssi_ctl,
-				sizeof(rx_pkt->pkt_meta.rssi_per_chain));
-
 	/*
 	 * If the mpdu_data_len is greater than Max (2k), drop the frame
 	 */
@@ -3616,9 +3596,28 @@ static int wma_mgmt_rx_process(void *handle, uint8_t *data,
 		qdf_mem_free(rx_pkt);
 		return -EINVAL;
 	}
-
-	/* Why not just use rx_event->hdr.buf_len? */
-	wbuf = qdf_nbuf_alloc(NULL, roundup(hdr->buf_len, 4), 0, 4, false);
+	/*
+	 * Allocate the memory for this rx packet, add extra 100 bytes for:-
+	 *
+	 * 1.  Filling the missing RSN capabilites by some APs, which fill the
+	 *     RSN IE length as extra 2 bytes but dont fill the IE data with
+	 *     capabilities, resulting in failure in unpack core due to length
+	 *     mismatch. Check sir_validate_and_rectify_ies for more info.
+	 *
+	 * 2.  In the API wma_process_rmf_frame(), the driver trims the CCMP
+	 *     header by overwriting the IEEE header to memory occupied by CCMP
+	 *     header, but an overflow is possible if the memory allocated to
+	 *     frame is less than the sizeof(struct ieee80211_frame) +CCMP
+	 *     HEADER len, so allocating 100 bytes would solve this issue too.
+	 *
+	 * 3.  CCMP header is pointing to orig_hdr +
+	 *     sizeof(struct ieee80211_frame) which could also result in OOB
+	 *     access, if the data len is less than
+	 *     sizeof(struct ieee80211_frame), allocating extra bytes would
+	 *     result in solving this issue too.
+	 */
+	wbuf = qdf_nbuf_alloc(NULL, roundup(hdr->buf_len + RESERVE_BYTES,
+							4), 0, 4, false);
 	if (!wbuf) {
 		WMA_LOGE("%s: Failed to allocate wbuf for mgmt rx len(%u)",
 			    __func__, hdr->buf_len);
@@ -3660,17 +3659,10 @@ static int wma_mgmt_rx_process(void *handle, uint8_t *data,
 #else
 	qdf_mem_copy(wh, param_tlvs->bufp, hdr->buf_len);
 #endif
-	/* If it is a beacon/probe response, save it for future use */
-	mgt_type = (wh)->i_fc[0] & IEEE80211_FC0_TYPE_MASK;
-	mgt_subtype = (wh)->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK;
 
-	WMA_LOGD(FL("BSSID: "MAC_ADDRESS_STR" snr = %d, Type = %x, Subtype = %x, seq_num = %x, rssi = %d, rssi_raw = %d tsf_delta: %u"),
+	WMA_LOGD(FL("BSSID: "MAC_ADDRESS_STR" snr = %d, rssi = %d, rssi_raw = %d tsf_delta: %u"),
 			MAC_ADDR_ARRAY(wh->i_addr3),
-			hdr->snr, mgt_type, mgt_subtype,
-			(((*(uint16_t *)wh->i_seq) &
-				IEEE80211_SEQ_SEQ_MASK) >>
-				IEEE80211_SEQ_SEQ_SHIFT),
-			rx_pkt->pkt_meta.rssi,
+			hdr->snr, rx_pkt->pkt_meta.rssi,
 			rx_pkt->pkt_meta.rssi_raw,
 			hdr->tsf_delta);
 	if (!wma_handle->mgmt_rx) {
@@ -3678,6 +3670,10 @@ static int wma_mgmt_rx_process(void *handle, uint8_t *data,
 		cds_pkt_return_packet(rx_pkt);
 		return -EINVAL;
 	}
+
+	/* If it is a beacon/probe response, save it for future use */
+	mgt_type = (wh)->i_fc[0] & IEEE80211_FC0_TYPE_MASK;
+	mgt_subtype = (wh)->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK;
 
 	if (wma_read_d0wow_flag(wma_handle)) {
 		WMA_LOGE("%s: Frame subtype is 0x%x", __func__, mgt_subtype);
@@ -3787,8 +3783,7 @@ QDF_STATUS wma_register_roaming_callbacks(void *cds_ctx,
 		enum sir_roam_op_code reason),
 	QDF_STATUS (*pe_roam_synch_cb)(tpAniSirGlobal mac,
 		roam_offload_synch_ind *roam_synch_data,
-		tpSirBssDescription  bss_desc_ptr,
-		enum sir_roam_op_code reason))
+		tpSirBssDescription  bss_desc_ptr))
 {
 
 	tp_wma_handle wma = cds_get_context(QDF_MODULE_ID_WMA);

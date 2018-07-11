@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -746,8 +746,8 @@ static bool lim_chk_n_process_wpa_rsn_ie(tpAniSirGlobal mac_ctx,
 					 uint8_t sub_type, bool *pmf_connection)
 {
 	uint8_t *wps_ie = NULL;
-	tDot11fIEWPA dot11f_ie_wpa = {0};
-	tDot11fIERSN dot11f_ie_rsn = {0};
+	tDot11fIEWPA dot11f_ie_wpa;
+	tDot11fIERSN dot11f_ie_rsn;
 	tSirRetStatus status = eSIR_SUCCESS;
 	/*
 	 * Clear the buffers so that frame parser knows that there isn't a
@@ -942,7 +942,7 @@ static bool lim_process_assoc_req_no_sta_ctx(tpAniSirGlobal mac_ctx,
 				mac_ctx->lim.maxStation);
 		lim_reject_association(mac_ctx, hdr->sa, sub_type, false,
 			(tAniAuthType) 0, 0, false,
-			eSIR_MAC_UNSPEC_FAILURE_STATUS,
+			(tSirResultCodes) eSIR_MAC_UNSPEC_FAILURE_STATUS,
 			session);
 		return false;
 	}
@@ -1135,7 +1135,6 @@ static bool lim_chk_wmm(tpAniSirGlobal mac_ctx, tpSirMacMgmtHdr hdr,
 			uint8_t sub_type, tHalBitVal qos_mode)
 {
 	tHalBitVal wme_mode;
-
 	limGetWmeMode(session, &wme_mode);
 	if ((qos_mode == eHAL_SET) || (wme_mode == eHAL_SET)) {
 		/*
@@ -1144,7 +1143,6 @@ static bool lim_chk_wmm(tpAniSirGlobal mac_ctx, tpSirMacMgmtHdr hdr,
 		 */
 		if (assoc_req->addtsPresent) {
 			uint8_t tspecIdx = 0;
-
 			if (lim_admit_control_add_ts(mac_ctx, hdr->sa,
 				&(assoc_req->addtsReq),
 				&(assoc_req->qosCapability),
@@ -1380,30 +1378,18 @@ static bool lim_update_sta_ds(tpAniSirGlobal mac_ctx, tpSirMacMgmtHdr hdr,
 		sta_ds->mlmStaContext.htCapability = 0;
 		sta_ds->mlmStaContext.vhtCapability = 0;
 	}
-
-	if (sta_ds->mlmStaContext.vhtCapability && vht_caps) {
+	if (sta_ds->mlmStaContext.vhtCapability) {
 		if (session->vht_config.su_beam_formee &&
-				vht_caps->suBeamFormerCap)
+				assoc_req->VHTCaps.suBeamFormerCap)
 			sta_ds->vhtBeamFormerCapable = 1;
 		else
 			sta_ds->vhtBeamFormerCapable = 0;
 		if (session->vht_config.su_beam_former &&
-				vht_caps->suBeamformeeCap)
+				assoc_req->VHTCaps.suBeamformeeCap)
 			sta_ds->vht_su_bfee_capable = 1;
 		else
 			sta_ds->vht_su_bfee_capable = 0;
-
-		pe_debug("peer_caps: suBformer: %d, suBformee: %d",
-			 vht_caps->suBeamFormerCap,
-			 vht_caps->suBeamformeeCap);
-		pe_debug("self_cap: suBformer: %d, suBformee: %d",
-			 session->vht_config.su_beam_former,
-			 session->vht_config.su_beam_formee);
-		pe_debug("connection's final cap: suBformer: %d, suBformee: %d",
-			 sta_ds->vhtBeamFormerCapable,
-			 sta_ds->vht_su_bfee_capable);
 	}
-
 	if (lim_populate_matching_rate_set(mac_ctx, sta_ds,
 			&(assoc_req->supportedRates),
 			&(assoc_req->extendedRates),
@@ -1419,7 +1405,7 @@ static bool lim_update_sta_ds(tpAniSirGlobal mac_ctx, tpSirMacMgmtHdr hdr,
 
 		lim_reject_association(mac_ctx, hdr->sa,
 			sub_type, true, auth_type, peer_idx, false,
-			eSIR_MAC_UNSPEC_FAILURE_STATUS,
+			(tSirResultCodes)eSIR_MAC_UNSPEC_FAILURE_STATUS,
 			session);
 		pe_err("Delete dph hash entry");
 		if (dph_delete_hash_entry(mac_ctx, hdr->sa, sta_ds->assocId,
@@ -1504,15 +1490,14 @@ static bool lim_update_sta_ds(tpAniSirGlobal mac_ctx, tpSirMacMgmtHdr hdr,
 		pe_err("Couldn't get PMF SA Query retry interval value");
 		lim_reject_association(mac_ctx, hdr->sa, sub_type, true,
 			auth_type, peer_idx, false,
-			eSIR_MAC_UNSPEC_FAILURE_STATUS,
+			(tSirResultCodes) eSIR_MAC_UNSPEC_FAILURE_STATUS,
 			session);
 		return false;
 	}
 	if (WNI_CFG_PMF_SA_QUERY_RETRY_INTERVAL_STAMIN > retry_interval) {
 		retry_interval = WNI_CFG_PMF_SA_QUERY_RETRY_INTERVAL_STADEF;
 	}
-	if (sta_ds->rmfEnabled &&
-		tx_timer_create(mac_ctx, &sta_ds->pmfSaQueryTimer,
+	if (tx_timer_create(mac_ctx, &sta_ds->pmfSaQueryTimer,
 			"PMF SA Query timer", lim_pmf_sa_query_timer_handler,
 			timer_id.value,
 			SYS_MS_TO_TICKS((retry_interval * 1024) / 1000),
@@ -1520,13 +1505,10 @@ static bool lim_update_sta_ds(tpAniSirGlobal mac_ctx, tpSirMacMgmtHdr hdr,
 		pe_err("could not create PMF SA Query timer");
 		lim_reject_association(mac_ctx, hdr->sa, sub_type,
 			true, auth_type, peer_idx, false,
-			eSIR_MAC_UNSPEC_FAILURE_STATUS,
+			(tSirResultCodes)eSIR_MAC_UNSPEC_FAILURE_STATUS,
 			session);
 		return false;
 	}
-	if (sta_ds->rmfEnabled)
-	    pe_debug("Created pmf timer sta-idx:%d assoc-id:%d",
-		     sta_ds->staIndex, sta_ds->assocId);
 #endif
 
 	if (assoc_req->ExtCap.present) {
@@ -1581,7 +1563,7 @@ static bool lim_update_sta_ctx(tpAniSirGlobal mac_ctx, tpPESession session,
 				sta_ds->mlmStaContext.subType, true,
 				sta_ds->mlmStaContext.authType,
 				sta_ds->assocId, true,
-				eSIR_MAC_UNSPEC_FAILURE_STATUS,
+				(tSirResultCodes)eSIR_MAC_UNSPEC_FAILURE_STATUS,
 				session);
 
 			if (session->parsedAssocReq)
@@ -1612,7 +1594,8 @@ static bool lim_update_sta_ctx(tpAniSirGlobal mac_ctx, tpPESession session,
 					sta_ds->mlmStaContext.subType, true,
 					sta_ds->mlmStaContext.authType,
 					sta_ds->assocId, true,
-					eSIR_MAC_UNSPEC_FAILURE_STATUS,
+					(tSirResultCodes)
+						eSIR_MAC_UNSPEC_FAILURE_STATUS,
 					session);
 
 				/* Restoring the state back. */
@@ -1634,7 +1617,8 @@ static bool lim_update_sta_ctx(tpAniSirGlobal mac_ctx, tpPESession session,
 					sta_ds->mlmStaContext.subType, true,
 					sta_ds->mlmStaContext.authType,
 					sta_ds->assocId, true,
-					eSIR_MAC_WME_REFUSED_STATUS,
+					(tSirResultCodes)
+						eSIR_MAC_WME_REFUSED_STATUS,
 					session);
 
 				/* Restoring the state back. */
@@ -1967,7 +1951,7 @@ void lim_process_assoc_req_frame(tpAniSirGlobal mac_ctx, uint8_t *rx_pkt_info,
 		pe_err("PeerIdx not avaialble. Reject associaton");
 		lim_reject_association(mac_ctx, hdr->sa, sub_type,
 				true, auth_type, peer_idx, false,
-				eSIR_MAC_UNSPEC_FAILURE_STATUS,
+				(tSirResultCodes)eSIR_MAC_UNSPEC_FAILURE_STATUS,
 				session);
 		goto error;
 	}
@@ -1987,7 +1971,7 @@ void lim_process_assoc_req_frame(tpAniSirGlobal mac_ctx, uint8_t *rx_pkt_info,
 
 		lim_reject_association(mac_ctx, hdr->sa, sub_type,
 			true, auth_type, peer_idx, false,
-			eSIR_MAC_UNSPEC_FAILURE_STATUS,
+			(tSirResultCodes) eSIR_MAC_UNSPEC_FAILURE_STATUS,
 			session);
 		goto error;
 	}

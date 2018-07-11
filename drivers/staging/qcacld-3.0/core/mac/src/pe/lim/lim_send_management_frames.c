@@ -1829,11 +1829,6 @@ lim_send_assoc_req_mgmt_frame(tpAniSirGlobal mac_ctx,
 		frm->vendor_vht_ie.sub_type =
 			pe_session->vendor_specific_vht_ie_sub_type;
 		frm->vendor_vht_ie.VHTCaps.present = 1;
-		if (!mac_ctx->roam.configParam.enable_subfee_vendor_vhtie &&
-		    pe_session->vht_config.su_beam_formee) {
-			pe_debug("Disable SU beamformee for vendor IE");
-			pe_session->vht_config.su_beam_formee = 0;
-		}
 		populate_dot11f_vht_caps(mac_ctx, pe_session,
 				&frm->vendor_vht_ie.VHTCaps);
 		vht_enabled = true;
@@ -1897,8 +1892,7 @@ lim_send_assoc_req_mgmt_frame(tpAniSirGlobal mac_ctx,
 		if (pe_session->beacon && pe_session->bcnLen > ie_offset) {
 			bcn_ie = pe_session->beacon + ie_offset;
 			bcn_ie_len = pe_session->bcnLen - ie_offset;
-			p_ext_cap = lim_get_ie_ptr_new(mac_ctx,
-							bcn_ie,
+			p_ext_cap = wlan_cfg_get_ie_ptr(bcn_ie,
 							bcn_ie_len,
 							DOT11F_EID_EXTCAP,
 							ONE_BYTE);
@@ -1960,8 +1954,6 @@ lim_send_assoc_req_mgmt_frame(tpAniSirGlobal mac_ctx,
 		assoc_cnf.sessionId = pe_session->peSessionId;
 
 		assoc_cnf.resultCode = eSIR_SME_RESOURCES_UNAVAILABLE;
-
-		cds_packet_free((void *)packet);
 
 		lim_post_sme_message(mac_ctx, LIM_MLM_ASSOC_CNF,
 			(uint32_t *) &assoc_cnf);
@@ -2081,8 +2073,7 @@ static QDF_STATUS lim_auth_tx_complete_cnf(tpAniSirGlobal mac_ctx,
 	uint16_t auth_ack_status;
 	uint16_t reason_code;
 
-	pe_debug("tx_complete = %d %s", tx_complete,
-		(tx_complete ? "success":"fail"));
+	pe_debug("tx_complete= %d", tx_complete);
 	if (tx_complete) {
 		mac_ctx->auth_ack_status = LIM_AUTH_ACK_RCD_SUCCESS;
 		auth_ack_status = ACKED;
@@ -2659,7 +2650,6 @@ lim_send_disassoc_mgmt_frame(tpAniSirGlobal pMac,
 	uint8_t txFlag = 0;
 	uint32_t val = 0;
 	uint8_t smeSessionId = 0;
-
 	if (NULL == psessionEntry) {
 		return;
 	}

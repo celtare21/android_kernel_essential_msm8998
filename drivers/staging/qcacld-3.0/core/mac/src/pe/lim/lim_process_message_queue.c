@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -663,7 +663,6 @@ __lim_handle_beacon(tpAniSirGlobal pMac, tpSirMsgQ pMsg,
 {
 	/* checking for global SME state... */
 	uint8_t *pRxPacketInfo;
-
 	lim_get_b_dfrom_rx_packet(pMac, pMsg->bodyptr,
 				  (uint32_t **) &pRxPacketInfo);
 
@@ -898,7 +897,6 @@ lim_handle80211_frames(tpAniSirGlobal pMac, tpSirMsgQ limMsg, uint8_t *pDeferMsg
 	tpPESession psessionEntry = NULL;
 	uint8_t sessionId;
 	bool isFrmFt = false;
-	uint8_t channel;
 
 	*pDeferMsg = false;
 	lim_get_b_dfrom_rx_packet(pMac, limMsg->bodyptr,
@@ -906,11 +904,9 @@ lim_handle80211_frames(tpAniSirGlobal pMac, tpSirMsgQ limMsg, uint8_t *pDeferMsg
 
 	pHdr = WMA_GET_RX_MAC_HEADER(pRxPacketInfo);
 	isFrmFt = WMA_GET_RX_FT_DONE(pRxPacketInfo);
-	channel = WMA_GET_RX_CH(pRxPacketInfo);
 	fc = pHdr->fc;
 
-	if (IS_5G_CH(channel) &&
-	    pMac->sap.SapDfsInfo.is_dfs_cac_timer_running) {
+	if (pMac->sap.SapDfsInfo.is_dfs_cac_timer_running) {
 		psessionEntry = pe_find_session_by_bssid(pMac,
 					pHdr->bssId, &sessionId);
 		if (psessionEntry &&
@@ -1291,16 +1287,18 @@ static void lim_process_messages(tpAniSirGlobal mac_ctx, tpSirMsgQ msg)
 	tSirMbMsgP2p *p2p_msg = NULL;
 	tSirSetActiveModeSetBncFilterReq *bcn_filter_req = NULL;
 
-	if (ANI_DRIVER_TYPE(mac_ctx) == QDF_DRIVER_TYPE_MFG) {
-		qdf_mem_free(msg->bodyptr);
-		msg->bodyptr = NULL;
-		return;
-	}
 	if (msg == NULL) {
 		pe_err("Message pointer is Null");
 		QDF_ASSERT(0);
 		return;
 	}
+
+	if (ANI_DRIVER_TYPE(mac_ctx) == QDF_DRIVER_TYPE_MFG) {
+		qdf_mem_free(msg->bodyptr);
+		msg->bodyptr = NULL;
+		return;
+	}
+
 #ifdef WLAN_DEBUG
 	mac_ctx->lim.numTot++;
 #endif
@@ -1388,13 +1386,10 @@ static void lim_process_messages(tpAniSirGlobal mac_ctx, tpSirMsgQ msg)
 			cds_pkt_return_packet(body_ptr);
 			break;
 		}
-		if (WMA_GET_ROAMCANDIDATEIND(new_msg.bodyptr))
-			pe_debug("roamCandidateInd: %d",
-				 WMA_GET_ROAMCANDIDATEIND(new_msg.bodyptr));
 
-		if (WMA_GET_OFFLOADSCANLEARN(new_msg.bodyptr))
-			pe_debug("offloadScanLearn: %d",
-				 WMA_GET_OFFLOADSCANLEARN(new_msg.bodyptr));
+		pe_debug("roamCandidateInd: %d offloadScanLearn: %d",
+				WMA_GET_ROAMCANDIDATEIND(new_msg.bodyptr),
+				WMA_GET_OFFLOADSCANLEARN(new_msg.bodyptr));
 
 		lim_handle80211_frames(mac_ctx, &new_msg, &defer_msg);
 

@@ -175,8 +175,6 @@ struct hdd_conn_flag {
  * @signal: holds rssi info
  * @assoc_status_code: holds assoc fail reason
  * @congestion: holds congestion percentage
- * @last_ssid: holds last ssid
- * @last_auth_type: holds last auth type
  */
 typedef struct connection_info_s {
 	eConnectionState connState;
@@ -209,8 +207,6 @@ typedef struct connection_info_s {
 	int8_t signal;
 	int32_t assoc_status_code;
 	uint32_t cca;
-	tCsrSSIDInfo last_ssid;
-	eCsrAuthType last_auth_type;
 } connection_info_t;
 
 /* Forward declarations */
@@ -239,10 +235,10 @@ bool hdd_conn_is_connected(hdd_station_ctx_t *pHddStaCtx);
  * hdd_conn_get_connected_band() - get current connection radio band
  * @pHddStaCtx:    pointer to global HDD Station context
  *
- * Return: SIR_BAND_2_4_GHZ or SIR_BAND_5_GHZ based on current AP connection
- *      SIR_BAND_ALL if not connected
+ * Return: eCSR_BAND_24 or eCSR_BAND_5G based on current AP connection
+ *      eCSR_BAND_ALL if not connected
  */
-tSirRFBand hdd_conn_get_connected_band(hdd_station_ctx_t *pHddStaCtx);
+eCsrBand hdd_conn_get_connected_band(hdd_station_ctx_t *pHddStaCtx);
 
 /**
  * hdd_get_sta_connection_in_progress() - get STA for which connection
@@ -383,5 +379,27 @@ static inline void hdd_save_gtk_params(hdd_adapter_t *adapter,
 {
 }
 #endif
+
+/**
+ * hdd_copy_ht_caps()- copy ht caps info from roam info to
+ *  hdd station context.
+ * @hdd_ht_cap: pointer to Source ht_cap info of type ieee80211_ht_cap
+ * @roam_ht_cap: pointer to roam ht_caps info
+ *
+ * Return: None
+ */
+void hdd_copy_ht_caps(struct ieee80211_ht_cap *hdd_ht_cap,
+		      tDot11fIEHTCaps *roam_ht_cap);
+
+/**
+ * hdd_copy_vht_caps()- copy vht caps info from roam info to
+ *  hdd station context.
+ * @hdd_vht_cap: pointer to Source vht_cap info of type ieee80211_vht_cap
+ * @roam_vht_cap: pointer to roam vht_caps info
+ *
+ * Return: None
+ */
+void hdd_copy_vht_caps(struct ieee80211_vht_cap *hdd_vht_cap,
+		       tDot11fIEVHTCaps *roam_vht_cap);
 
 #endif

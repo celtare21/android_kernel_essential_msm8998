@@ -34,6 +34,7 @@
 #include "hif.h"
 #include "wlan_hdd_hostapd.h"
 #include "wlan_hdd_debugfs_llstat.h"
+#include "wlan_hdd_request_manager.h"
 #include "wma_api.h"
 #include "wma.h"
 
@@ -1215,9 +1216,9 @@ __wlan_hdd_cfg80211_ll_stats_set(struct wiphy *wiphy,
 	if (0 != status)
 		return -EINVAL;
 
-	if (hdd_nla_parse(tb_vendor, QCA_WLAN_VENDOR_ATTR_LL_STATS_SET_MAX,
-			  (struct nlattr *)data, data_len,
-			  qca_wlan_vendor_ll_set_policy)) {
+	if (nla_parse(tb_vendor, QCA_WLAN_VENDOR_ATTR_LL_STATS_SET_MAX,
+		      (struct nlattr *)data,
+		      data_len, qca_wlan_vendor_ll_set_policy)) {
 		hdd_err("maximum attribute not present");
 		return -EINVAL;
 	}
@@ -1427,9 +1428,9 @@ __wlan_hdd_cfg80211_ll_stats_get(struct wiphy *wiphy,
 		return -EBUSY;
 	}
 
-	if (hdd_nla_parse(tb_vendor, QCA_WLAN_VENDOR_ATTR_LL_STATS_GET_MAX,
-			  (struct nlattr *)data, data_len,
-			  qca_wlan_vendor_ll_get_policy)) {
+	if (nla_parse(tb_vendor, QCA_WLAN_VENDOR_ATTR_LL_STATS_GET_MAX,
+		      (struct nlattr *)data,
+		      data_len, qca_wlan_vendor_ll_get_policy)) {
 		hdd_err("max attribute not present");
 		return -EINVAL;
 	}
@@ -1543,9 +1544,9 @@ __wlan_hdd_cfg80211_ll_stats_clear(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
-	if (hdd_nla_parse(tb_vendor, QCA_WLAN_VENDOR_ATTR_LL_STATS_CLR_MAX,
-			  (struct nlattr *)data, data_len,
-			  qca_wlan_vendor_ll_clr_policy)) {
+	if (nla_parse(tb_vendor, QCA_WLAN_VENDOR_ATTR_LL_STATS_CLR_MAX,
+		      (struct nlattr *)data,
+		      data_len, qca_wlan_vendor_ll_clr_policy)) {
 		hdd_err("STATS_CLR_MAX is not present");
 		return -EINVAL;
 	}
@@ -2466,10 +2467,10 @@ static int __wlan_hdd_cfg80211_ll_stats_ext_set_param(struct wiphy *wiphy,
 	if (0 != status)
 		return -EPERM;
 
-	if (hdd_nla_parse(tb, QCA_WLAN_VENDOR_ATTR_LL_STATS_EXT_MAX,
-			  (struct nlattr *)data, data_len,
-			  qca_wlan_vendor_ll_ext_policy)) {
-		hdd_err("maximum attribute not present");
+	if (nla_parse(tb, QCA_WLAN_VENDOR_ATTR_LL_STATS_EXT_MAX,
+		      (struct nlattr *)data, data_len,
+		      qca_wlan_vendor_ll_ext_policy)) {
+		hdd_err(FL("maximum attribute not present"));
 		return -EPERM;
 	}
 
@@ -3794,77 +3795,58 @@ static void wlan_hdd_fill_rate_info(hdd_ap_ctx_t *ap_ctx,
 			flags);
 }
 
+struct peer_info_priv {
+	struct sir_peer_sta_ext_info peer_sta_ext_info;
+};
+
 /**
  * wlan_hdd_get_peer_info_cb() - get peer info callback
  * @sta_info: pointer of peer information
  * @context: get peer info callback context
  *
- * This function will fill stats info of AP Context
+ * This function will fill stats info to peer info priv
  *
  */
 static void wlan_hdd_get_peer_info_cb(struct sir_peer_info_ext_resp *sta_info,
-		void *context)
+				      void *context)
 {
-	struct statsContext *get_peer_info_context;
-	struct sir_peer_info_ext *peer_info;
-	hdd_adapter_t *adapter;
-	hdd_ap_ctx_t *ap_ctx;
+	struct hdd_request *request;
+	struct peer_info_priv *priv;
+	uint8_t sta_num;
 
-	if ((sta_info == NULL) || (context == NULL)) {
-		hdd_err("Bad param, sta_info [%pK] context [%pK]",
-			sta_info, context);
-		return;
-	}
-
-	spin_lock(&hdd_context_lock);
-	/*
-	 * there is a race condition that exists between this callback
-	 * function and the caller since the caller could time out either
-	 * before or while this code is executing.  we use a spinlock to
-	 * serialize these actions
-	 */
-	get_peer_info_context = context;
-	if (PEER_INFO_CONTEXT_MAGIC !=
-			get_peer_info_context->magic) {
-		/*
-		 * the caller presumably timed out so there is nothing
-		 * we can do
-		 */
-		spin_unlock(&hdd_context_lock);
-		hdd_warn("Invalid context, magic [%08x]",
-			get_peer_info_context->magic);
+	if (!sta_info) {
+		hdd_err("Bad param, sta_info [%pK]",
+			sta_info);
 		return;
 	}
 
 	if (!sta_info->count) {
-		spin_unlock(&hdd_context_lock);
 		hdd_err("Fail to get remote peer info");
 		return;
 	}
 
-	adapter = get_peer_info_context->pAdapter;
-	ap_ctx = WLAN_HDD_GET_AP_CTX_PTR(adapter);
-	qdf_mem_zero(&ap_ctx->txrx_stats,
-			sizeof(ap_ctx->txrx_stats));
+	if (sta_info->count > MAX_PEER_STA) {
+		hdd_warn("Exceed max peer number %d", sta_info->count);
+		sta_num = MAX_PEER_STA;
+	} else {
+		sta_num = sta_info->count;
+	}
 
-	peer_info = sta_info->info;
-	ap_ctx->txrx_stats.tx_packets = peer_info->tx_packets;
-	ap_ctx->txrx_stats.tx_bytes = peer_info->tx_bytes;
-	ap_ctx->txrx_stats.rx_packets = peer_info->rx_packets;
-	ap_ctx->txrx_stats.rx_bytes = peer_info->rx_bytes;
-	ap_ctx->txrx_stats.tx_retries = peer_info->tx_retries;
-	ap_ctx->txrx_stats.tx_failed = peer_info->tx_failed;
-	ap_ctx->txrx_stats.rssi =
-		peer_info->rssi + WLAN_HDD_TGT_NOISE_FLOOR_DBM;
-	wlan_hdd_fill_rate_info(ap_ctx, peer_info);
+	request = hdd_request_get(context);
+	if (!request) {
+		hdd_err("Obsolete request");
+		return;
+	}
 
-	get_peer_info_context->magic = 0;
+	priv = hdd_request_priv(request);
 
-	/* notify the caller */
-	complete(&get_peer_info_context->completion);
+	priv->peer_sta_ext_info.sta_num = sta_num;
+	qdf_mem_copy(&priv->peer_sta_ext_info.info,
+		     sta_info->info,
+		     sta_num * sizeof(sta_info->info[0]));
 
-	/* serialization is complete */
-	spin_unlock(&hdd_context_lock);
+	hdd_request_complete(request);
+	hdd_request_put(request);
 }
 
 /**
@@ -3880,54 +3862,77 @@ static int wlan_hdd_get_peer_info(hdd_adapter_t *adapter,
 					struct qdf_mac_addr macaddress)
 {
 	QDF_STATUS status;
+	void *cookie;
 	int ret;
-	static struct statsContext context;
+	hdd_ap_ctx_t *ap_ctx = NULL;
 	struct sir_peer_info_ext_req peer_info_req;
+	struct hdd_request *request;
+	struct peer_info_priv *priv;
+	static const struct hdd_request_params params = {
+		.priv_size = sizeof(*priv),
+		.timeout_ms = WLAN_WAIT_TIME_STATS,
+	};
 
-	if (adapter == NULL) {
-		hdd_err("pAdapter is NULL");
+	if (!adapter) {
+		hdd_err("adapter is NULL");
 		return -EFAULT;
 	}
 
-	init_completion(&context.completion);
-	context.magic = PEER_INFO_CONTEXT_MAGIC;
-	context.pAdapter = adapter;
+	request = hdd_request_alloc(&params);
+	if (!request) {
+		hdd_err("Request allocation failure");
+		return -ENOMEM;
+	}
 
-	qdf_mem_copy(&(peer_info_req.peer_macaddr), &macaddress,
-			QDF_MAC_ADDR_SIZE);
+	cookie = hdd_request_cookie(request);
+	priv = hdd_request_priv(request);
+
+	qdf_mem_copy(&peer_info_req.peer_macaddr, &macaddress,
+		     QDF_MAC_ADDR_SIZE);
 	peer_info_req.sessionid = adapter->sessionId;
 	peer_info_req.reset_after_request = 0;
 	status = sme_get_peer_info_ext(WLAN_HDD_GET_HAL_CTX(adapter),
-			&peer_info_req,
-			&context,
-			wlan_hdd_get_peer_info_cb);
+				       &peer_info_req,
+				       cookie,
+				       wlan_hdd_get_peer_info_cb);
 	if (status != QDF_STATUS_SUCCESS) {
 		hdd_err("Unable to retrieve statistics for peer info");
 		ret = -EFAULT;
 	} else {
-		if (!wait_for_completion_timeout(&context.completion,
-				msecs_to_jiffies(WLAN_WAIT_TIME_STATS))) {
+		ret = hdd_request_wait_for_response(request);
+		if (ret) {
 			hdd_err("SME timed out while retrieving peer info");
 			ret = -EFAULT;
-		} else
+		} else {
+			/* only support one peer by now */
+			ap_ctx = WLAN_HDD_GET_AP_CTX_PTR(adapter);
+			qdf_mem_zero(&ap_ctx->txrx_stats,
+				     sizeof(struct hdd_fw_txrx_stats));
+
+			ap_ctx->txrx_stats.tx_packets =
+				priv->peer_sta_ext_info.info[0].tx_packets;
+			ap_ctx->txrx_stats.tx_bytes =
+				priv->peer_sta_ext_info.info[0].tx_bytes;
+			ap_ctx->txrx_stats.rx_packets =
+				priv->peer_sta_ext_info.info[0].rx_packets;
+			ap_ctx->txrx_stats.rx_bytes =
+				priv->peer_sta_ext_info.info[0].rx_bytes;
+			ap_ctx->txrx_stats.tx_retries =
+				priv->peer_sta_ext_info.info[0].tx_retries;
+			ap_ctx->txrx_stats.tx_failed =
+				priv->peer_sta_ext_info.info[0].tx_failed;
+			ap_ctx->txrx_stats.rssi =
+				priv->peer_sta_ext_info.info[0].rssi +
+				WLAN_HDD_TGT_NOISE_FLOOR_DBM;
+			wlan_hdd_fill_rate_info(ap_ctx,
+				&priv->peer_sta_ext_info.info[0]);
 			ret = 0;
+
+		}
 	}
-	/*
-	 * either we never sent a request, we sent a request and received a
-	 * response or we sent a request and timed out.  if we never sent a
-	 * request or if we sent a request and got a response, we want to
-	 * clear the magic out of paranoia.  if we timed out there is a
-	 * race condition such that the callback function could be
-	 * executing at the same time we are. of primary concern is if the
-	 * callback function had already verified the "magic" but had not
-	 * yet set the completion variable when a timeout occurred. we
-	 * serialize these activities by invalidating the magic while
-	 * holding a shared spinlock which will cause us to block if the
-	 * callback is currently executing
-	 */
-	spin_lock(&hdd_context_lock);
-	context.magic = 0;
-	spin_unlock(&hdd_context_lock);
+
+	hdd_request_put(request);
+
 	return ret;
 }
 
@@ -4633,12 +4638,8 @@ static int __wlan_hdd_cfg80211_dump_station(struct wiphy *wiphy,
 	hdd_debug("%s: idx %d", __func__, idx);
 	if (idx != 0)
 		return -ENOENT;
-	if (hdd_ctx->num_provisioned_addr)
-		qdf_mem_copy(mac, hdd_ctx->provisioned_mac_addr[0].bytes,
-			     QDF_MAC_ADDR_SIZE);
-	else
-		qdf_mem_copy(mac, hdd_ctx->derived_mac_addr[0].bytes,
-			     QDF_MAC_ADDR_SIZE);
+	qdf_mem_copy(mac, hdd_ctx->config->intfMacAddr[0].bytes,
+				QDF_MAC_ADDR_SIZE);
 	return __wlan_hdd_cfg80211_get_station(wiphy, dev, mac, sinfo);
 }
 
@@ -4744,9 +4745,8 @@ static int __wlan_hdd_cfg80211_dump_survey(struct wiphy *wiphy,
 	mutex_lock(&pHddCtx->chan_info_lock);
 	freq = pHddCtx->chan_info[idx].freq;
 
-	for (i = 0; i < HDD_NUM_NL80211_BANDS && !filled; i++) {
+	for (i = 0; i < HDD_NUM_NL80211_BANDS; i++) {
 		struct ieee80211_supported_band *band = wiphy->bands[i];
-
 		if (NULL == wiphy->bands[i])
 			continue;
 		for (j = 0; j < wiphy->bands[i]->n_channels && !filled; j++) {

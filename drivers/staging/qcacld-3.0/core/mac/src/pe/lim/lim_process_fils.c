@@ -349,6 +349,13 @@ static uint32_t lim_process_fils_eap_tlv(tpPESession pe_session,
 
 		pe_debug("tlv type %x len %u total %u",
 			tlv->type, tlv->length, data_len);
+
+		if (tlv->length > (data_len - 2)) {
+			pe_err("tlv len %d greater data_len %d",
+				tlv->length, data_len);
+			return 0;
+		}
+
 		switch (tlv->type) {
 		case SIR_FILS_EAP_TLV_KEYNAME_NAI:
 			auth_info->keyname = qdf_mem_malloc(tlv->length);
@@ -1136,12 +1143,6 @@ void lim_update_fils_config(tpPESession session,
 	csr_fils_info->akm = fils_config_info->akm_type;
 	csr_fils_info->auth = fils_config_info->auth_type;
 	csr_fils_info->sequence_number = fils_config_info->sequence_number;
-	if (fils_config_info->key_nai_length > FILS_MAX_KEYNAME_NAI_LENGTH) {
-		pe_err("Restricting the key_nai_length of  %d to max %d",
-		       fils_config_info->key_nai_length,
-		       FILS_MAX_KEYNAME_NAI_LENGTH);
-		fils_config_info->key_nai_length = FILS_MAX_KEYNAME_NAI_LENGTH;
-	}
 	csr_fils_info->keyname_nai_data =
 		qdf_mem_malloc(fils_config_info->key_nai_length);
 	if (!csr_fils_info->keyname_nai_data) {

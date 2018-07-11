@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -604,8 +604,6 @@ lim_configure_ap_start_bss_session(tpAniSirGlobal mac_ctx, tpPESession session,
 	session->isCoalesingInIBSSAllowed =
 		sme_start_bss_req->isCoalesingInIBSSAllowed;
 
-	session->beacon_tx_rate = sme_start_bss_req->beacon_tx_rate;
-
 }
 
 /**
@@ -1100,8 +1098,6 @@ __lim_handle_sme_start_bss_request(tpAniSirGlobal mac_ctx, uint32_t *msg_buf)
 				pe_err("Set LOCAL_POWER_CONSTRAINT failed");
 		}
 
-		mlm_start_req->beacon_tx_rate = session->beacon_tx_rate;
-
 		session->limPrevSmeState = session->limSmeState;
 		session->limSmeState = eLIM_SME_WT_START_BSS_STATE;
 		MTRACE(mac_trace
@@ -1187,7 +1183,6 @@ static bool __lim_process_sme_start_bss_req(tpAniSirGlobal pMac, tpSirMsgQ pMsg)
 void lim_get_random_bssid(tpAniSirGlobal pMac, uint8_t *data)
 {
 	uint32_t random[2];
-
 	random[0] = tx_time_get();
 	random[0] |= (random[0] << 15);
 	random[1] = random[0] >> 1;
@@ -2009,7 +2004,6 @@ uint8_t lim_get_max_tx_power(int8_t regMax, int8_t apTxPower,
 {
 	uint8_t maxTxPower = 0;
 	uint8_t txPower = QDF_MIN(regMax, (apTxPower));
-
 	txPower = QDF_MIN(txPower, iniTxPower);
 	if ((txPower >= MIN_TX_PWR_CAP) && (txPower <= MAX_TX_PWR_CAP))
 		maxTxPower = txPower;
@@ -2932,7 +2926,6 @@ __lim_process_sme_set_context_req(tpAniSirGlobal mac_ctx, uint32_t *msg_buf)
 		if (mlm_set_key_req->numKeys >
 				SIR_MAC_MAX_NUM_OF_DEFAULT_KEYS) {
 			pe_err("no.of keys exceeded max num of default keys limit");
-			qdf_mem_free(mlm_set_key_req);
 			goto end;
 		}
 		qdf_copy_macaddr(&mlm_set_key_req->peer_macaddr,
@@ -2954,7 +2947,6 @@ __lim_process_sme_set_context_req(tpAniSirGlobal mac_ctx, uint32_t *msg_buf)
 		    LIM_IS_AP_ROLE(session_entry)) {
 			if (set_context_req->keyMaterial.key[0].keyLength) {
 				uint8_t key_id;
-
 				key_id =
 					set_context_req->keyMaterial.key[0].keyId;
 				qdf_mem_copy((uint8_t *)
@@ -2963,7 +2955,6 @@ __lim_process_sme_set_context_req(tpAniSirGlobal mac_ctx, uint32_t *msg_buf)
 					sizeof(tSirKeyMaterial));
 			} else {
 				uint32_t i;
-
 				for (i = 0; i < SIR_MAC_MAX_NUM_OF_DEFAULT_KEYS;
 				     i++) {
 					qdf_mem_copy((uint8_t *)
@@ -3199,7 +3190,6 @@ lim_get_wpspbc_sessions_end:
 static void __lim_counter_measures(tpAniSirGlobal pMac, tpPESession psessionEntry)
 {
 	tSirMacAddr mac = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-
 	if (LIM_IS_AP_ROLE(psessionEntry))
 		lim_send_disassoc_mgmt_frame(pMac, eSIR_MAC_MIC_FAILURE_REASON,
 					     mac, psessionEntry, false);
@@ -3308,7 +3298,6 @@ __lim_handle_sme_stop_bss_request(tpAniSirGlobal pMac, uint32_t *pMsgBuf)
 	if (!LIM_IS_IBSS_ROLE(psessionEntry) &&
 	    !LIM_IS_NDI_ROLE(psessionEntry)) {
 		tSirMacAddr bcAddr = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-
 		if (stopBssReq.reasonCode == eSIR_SME_MIC_COUNTER_MEASURES)
 			/* Send disassoc all stations associated thru TKIP */
 			__lim_counter_measures(pMac, psessionEntry);
@@ -3538,7 +3527,7 @@ void __lim_process_sme_assoc_cnf_new(tpAniSirGlobal mac_ctx, uint32_t msg_type,
 				       sta_ds->mlmStaContext.subType,
 				       true, sta_ds->mlmStaContext.authType,
 				       sta_ds->assocId, true,
-				       eSIR_MAC_UNSPEC_FAILURE_STATUS,
+				       (tSirResultCodes) eSIR_MAC_UNSPEC_FAILURE_STATUS,
 				       session_entry);
 	}
 end:
@@ -3815,7 +3804,6 @@ void lim_process_sme_addts_rsp_timeout(tpAniSirGlobal pMac, uint32_t param)
 {
 	/* fetch the sessionEntry based on the sessionId */
 	tpPESession psessionEntry;
-
 	psessionEntry = pe_find_session_by_session_id(pMac,
 				pMac->lim.limTimers.gLimAddtsRspTimer.
 				sessionId);
@@ -4618,7 +4606,6 @@ __lim_process_sme_reset_ap_caps_change(tpAniSirGlobal pMac, uint32_t *pMsgBuf)
 	tpSirResetAPCapsChange pResetCapsChange;
 	tpPESession psessionEntry;
 	uint8_t sessionId = 0;
-
 	if (pMsgBuf == NULL) {
 		pe_err("Buffer is Pointing to NULL");
 		return;
@@ -4795,9 +4782,9 @@ static void lim_set_pdev_ht_ie(tpAniSirGlobal mac_ctx, uint8_t pdev_id,
 				ie_params->ie_len);
 
 		if (NSS_1x1_MODE == i) {
-			p_ie = lim_get_ie_ptr_new(mac_ctx, ie_params->ie_ptr,
-					ie_params->ie_len,
-					DOT11F_EID_HTCAPS, ONE_BYTE);
+			p_ie = wlan_cfg_get_ie_ptr(ie_params->ie_ptr,
+						   ie_params->ie_len,
+						   DOT11F_EID_HTCAPS, ONE_BYTE);
 			if (NULL == p_ie) {
 				qdf_mem_free(ie_params->ie_ptr);
 				qdf_mem_free(ie_params);
@@ -4869,9 +4856,10 @@ static void lim_set_pdev_vht_ie(tpAniSirGlobal mac_ctx, uint8_t pdev_id,
 				ie_params->ie_len);
 
 		if (NSS_1x1_MODE == i) {
-			p_ie = lim_get_ie_ptr_new(mac_ctx, ie_params->ie_ptr,
-					ie_params->ie_len,
-					DOT11F_EID_VHTCAPS, ONE_BYTE);
+			p_ie = wlan_cfg_get_ie_ptr(ie_params->ie_ptr,
+						   ie_params->ie_len,
+						   DOT11F_EID_VHTCAPS,
+						   ONE_BYTE);
 			if (NULL == p_ie) {
 				qdf_mem_free(ie_params->ie_ptr);
 				qdf_mem_free(ie_params);
@@ -5808,8 +5796,18 @@ static void lim_process_update_add_ies(tpAniSirGlobal mac_ctx,
 		if (update_ie->append) {
 			/*
 			 * In case of append, allocate new memory
-			 * with combined length
+			 * with combined length.
+			 * Multiple back to back append commands
+			 * can lead to a huge length.So, check
+			 * for the validity of the length.
 			 */
+			if (addn_ie->probeRespDataLen >
+				(USHRT_MAX - update_ie->ieBufferlength)) {
+				pe_err("IE Length overflow, curr:%d, new:%d",
+					addn_ie->probeRespDataLen,
+					update_ie->ieBufferlength);
+				goto end;
+			}
 			new_length = update_ie->ieBufferlength +
 				addn_ie->probeRespDataLen;
 			new_ptr = qdf_mem_malloc(new_length);

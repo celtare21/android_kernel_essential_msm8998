@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -63,7 +63,6 @@
 #include <cds_sched.h>
 #include "sme_api.h"
 
-#define WLAN_HDD_HIPRI_TOS 0xc0
 #define WLAN_HDD_MAX_DSCP 0x3f
 
 #define HDD_WMM_UP_TO_AC_MAP_SIZE 8
@@ -97,6 +96,7 @@ void wlan_hdd_process_peer_unauthorised_pause(hdd_adapter_t *adapter)
 #else
 void wlan_hdd_process_peer_unauthorised_pause(hdd_adapter_t *adapter)
 {
+	return;
 }
 #endif
 
@@ -371,6 +371,8 @@ static void hdd_wmm_inactivity_timer_cb(void *user_data)
 				   QDF_TIMER_STATE_STOPPED);
 		}
 	}
+
+	return;
 }
 
 /**
@@ -414,9 +416,9 @@ hdd_wmm_enable_inactivity_timer(struct hdd_wmm_qos_context *pQosContext,
 		hdd_err("Starting inactivity timer failed on AC %d",
 			  acType);
 		qdf_status = qdf_mc_timer_destroy(&pAc->wmmInactivityTimer);
-		if (!QDF_IS_STATUS_SUCCESS(qdf_status))
+		if (!QDF_IS_STATUS_SUCCESS(qdf_status)) {
 			hdd_err("Failed to destroy inactivity timer");
-
+		}
 		return qdf_status;
 	}
 	pAc->wmmInactivityTime = inactivityTime;
@@ -506,13 +508,13 @@ static QDF_STATUS hdd_wmm_sme_callback(tHalHandle hHal,
 	acType = pQosContext->acType;
 	pAc = &pAdapter->hddWmmStatus.wmmAcStatus[acType];
 
-	hdd_debug("status %d flowid %d info %pK",
+	hdd_info("status %d flowid %d info %pK",
 		 smeStatus, qosFlowId, pCurrentQosInfo);
 
 	switch (smeStatus) {
 
 	case SME_QOS_STATUS_SETUP_SUCCESS_IND:
-		hdd_debug("Setup is complete");
+		hdd_info("Setup is complete");
 
 		/* there will always be a TSPEC returned with this
 		 * status, even if a TSPEC is not exchanged OTA
@@ -794,7 +796,7 @@ static QDF_STATUS hdd_wmm_sme_callback(tHalHandle hHal,
 			pAc->wmmAcAccessGranted = false;
 			pAc->wmmAcAccessFailed = false;
 		} else {
-			hdd_debug("Explicit Qos, notifying user space");
+			hdd_info("Explicit Qos, notifying user space");
 
 			/* this was triggered by an application */
 			pQosContext->lastStatus = HDD_WLAN_WMM_STATUS_LOST;
@@ -806,7 +808,7 @@ static QDF_STATUS hdd_wmm_sme_callback(tHalHandle hHal,
 		break;
 
 	case SME_QOS_STATUS_RELEASE_REQ_PENDING_RSP:
-		hdd_debug("Release pending");
+		hdd_info("Release pending");
 		/* not a callback status -- ignore if we get it */
 		break;
 
@@ -821,7 +823,7 @@ static QDF_STATUS hdd_wmm_sme_callback(tHalHandle hHal,
 		break;
 
 	case SME_QOS_STATUS_MODIFY_SETUP_SUCCESS_IND:
-		hdd_debug("Modification is complete, notify TL");
+		hdd_info("Modification is complete, notify TL");
 
 		/* there will always be a TSPEC returned with this
 		 * status, even if a TSPEC is not exchanged OTA
@@ -866,7 +868,7 @@ static QDF_STATUS hdd_wmm_sme_callback(tHalHandle hHal,
 		break;
 
 	case SME_QOS_STATUS_MODIFY_SETUP_PENDING_RSP:
-		hdd_debug("modification pending");
+		hdd_info("modification pending");
 		/* not a callback status -- ignore if we get it */
 		break;
 
@@ -1020,7 +1022,7 @@ static void __hdd_wmm_do_implicit_qos(struct work_struct *work)
 	acType = pQosContext->acType;
 	pAc = &pAdapter->hddWmmStatus.wmmAcStatus[acType];
 
-	hdd_debug("pAdapter %pK acType %d", pAdapter, acType);
+	hdd_info("pAdapter %pK acType %d", pAdapter, acType);
 
 	if (!pAc->wmmAcAccessNeeded) {
 		hdd_err("AC %d doesn't need service", acType);
@@ -1196,7 +1198,7 @@ static void __hdd_wmm_do_implicit_qos(struct work_struct *work)
 		/* setup is pending, so no more work to do now.  all
 		 * further work will be done in hdd_wmm_sme_callback()
 		 */
-		hdd_debug("Setup is pending, no further work");
+		hdd_info("Setup is pending, no further work");
 
 		break;
 
@@ -1218,7 +1220,7 @@ static void __hdd_wmm_do_implicit_qos(struct work_struct *work)
 		/* for these cases everything is already setup so we
 		 * can signal TL that it has work to do
 		 */
-		hdd_debug("Setup is complete, notify TL");
+		hdd_info("Setup is complete, notify TL");
 
 		pAc->wmmAcAccessAllowed = true;
 		pAc->wmmAcAccessGranted = true;
@@ -1266,8 +1268,9 @@ QDF_STATUS hdd_wmm_init(hdd_adapter_t *pAdapter)
 	/* DSCP to User Priority Lookup Table
 	 * By default use the 3 Precedence bits of DSCP as the User Priority
 	 */
-	for (dscp = 0; dscp <= WLAN_HDD_MAX_DSCP; dscp++)
+	for (dscp = 0; dscp <= WLAN_HDD_MAX_DSCP; dscp++) {
 		hddWmmDscpToUpMap[dscp] = dscp >> 3;
+	}
 
 	/* Special case for Expedited Forwarding (DSCP 46) */
 	hddWmmDscpToUpMap[46] = SME_QOS_WMM_UP_VO;
@@ -1375,22 +1378,6 @@ QDF_STATUS hdd_wmm_adapter_close(hdd_adapter_t *pAdapter)
 	return QDF_STATUS_SUCCESS;
 }
 
-static inline unsigned char hdd_wmm_check_ip_proto(unsigned char ip_proto,
-						   unsigned char ip_tos,
-						   bool *is_hipri)
-{
-	switch (ip_proto) {
-	case IPPROTO_ICMP:
-	case IPPROTO_ICMPV6:
-		*is_hipri = true;
-		return WLAN_HDD_HIPRI_TOS;
-
-	default:
-		*is_hipri = false;
-		return ip_tos;
-	}
-}
-
 /**
  * hdd_wmm_classify_pkt() - Function which will classify an OS packet
  * into a WMM AC based on DSCP
@@ -1398,7 +1385,7 @@ static inline unsigned char hdd_wmm_check_ip_proto(unsigned char ip_proto,
  * @adapter: adapter upon which the packet is being transmitted
  * @skb: pointer to network buffer
  * @user_pri: user priority of the OS packet
- * @is_hipri: high priority packet flag
+ * @is_eapol: eapol packet flag
  *
  * Return: None
  */
@@ -1406,7 +1393,7 @@ static
 void hdd_wmm_classify_pkt(hdd_adapter_t *adapter,
 			  struct sk_buff *skb,
 			  sme_QosWmmUpType *user_pri,
-			  bool *is_hipri)
+			  bool *is_eapol)
 {
 	unsigned char dscp;
 	unsigned char tos;
@@ -1433,16 +1420,14 @@ void hdd_wmm_classify_pkt(hdd_adapter_t *adapter,
 	if (eth_hdr->eth_II.h_proto == htons(ETH_P_IP)) {
 		/* case 1: Ethernet II IP packet */
 		ip_hdr = (struct iphdr *)&pkt[sizeof(eth_hdr->eth_II)];
-		tos = hdd_wmm_check_ip_proto(ip_hdr->protocol, ip_hdr->tos,
-					     is_hipri);
+		tos = ip_hdr->tos;
 #ifdef HDD_WMM_DEBUG
 		hdd_info("Ethernet II IP Packet, tos is %d", tos);
 #endif /* HDD_WMM_DEBUG */
+
 	} else if (eth_hdr->eth_II.h_proto == htons(ETH_P_IPV6)) {
 		ipv6hdr = ipv6_hdr(skb);
-		tos = hdd_wmm_check_ip_proto(
-			ipv6hdr->nexthdr, ntohs(*(const __be16 *)ipv6hdr) >> 4,
-			is_hipri);
+		tos = ntohs(*(const __be16 *)ipv6hdr) >> 4;
 #ifdef HDD_WMM_DEBUG
 		hdd_info("Ethernet II IPv6 Packet, tos is %d", tos);
 #endif /* HDD_WMM_DEBUG */
@@ -1453,8 +1438,7 @@ void hdd_wmm_classify_pkt(hdd_adapter_t *adapter,
 		  (eth_hdr->eth_8023.h_proto == htons(ETH_P_IP))) {
 		/* case 2: 802.3 LLC/SNAP IP packet */
 		ip_hdr = (struct iphdr *)&pkt[sizeof(eth_hdr->eth_8023)];
-		tos = hdd_wmm_check_ip_proto(ip_hdr->protocol, ip_hdr->tos,
-					     is_hipri);
+		tos = ip_hdr->tos;
 #ifdef HDD_WMM_DEBUG
 		hdd_info("802.3 LLC/SNAP IP Packet, tos is %d", tos);
 #endif /* HDD_WMM_DEBUG */
@@ -1467,8 +1451,7 @@ void hdd_wmm_classify_pkt(hdd_adapter_t *adapter,
 			ip_hdr =
 				(struct iphdr *)
 				&pkt[sizeof(eth_hdr->eth_IIv)];
-			tos = hdd_wmm_check_ip_proto(ip_hdr->protocol,
-						     ip_hdr->tos, is_hipri);
+			tos = ip_hdr->tos;
 #ifdef HDD_WMM_DEBUG
 			hdd_info("Ethernet II VLAN tagged IP Packet, tos is %d",
 				 tos);
@@ -1488,39 +1471,30 @@ void hdd_wmm_classify_pkt(hdd_adapter_t *adapter,
 			ip_hdr =
 				(struct iphdr *)
 				&pkt[sizeof(eth_hdr->eth_8023v)];
-			tos = hdd_wmm_check_ip_proto(ip_hdr->protocol,
-						     ip_hdr->tos, is_hipri);
+			tos = ip_hdr->tos;
 #ifdef HDD_WMM_DEBUG
 			hdd_info("802.3 LLC/SNAP VLAN tagged IP Packet, tos is %d",
 				 tos);
 #endif /* HDD_WMM_DEBUG */
 		} else {
 			/* default */
-			*is_hipri = false;
-			tos = 0;
 #ifdef HDD_WMM_DEBUG
 			hdd_warn("VLAN tagged Unhandled Protocol, using default tos");
 #endif /* HDD_WMM_DEBUG */
+			tos = 0;
 		}
-	} else if (eth_hdr->eth_II.h_proto == htons(HDD_ETHERTYPE_802_1_X)) {
-		*is_hipri = true;
-		tos = WLAN_HDD_HIPRI_TOS;
-#ifdef HDD_WMM_DEBUG
-		hdd_info("802.1x packet, tos is %d", tos);
-#endif /* HDD_WMM_DEBUG */
-	} else if (skb->protocol == htons(ETH_P_ARP)) {
-		*is_hipri = true;
-		tos = WLAN_HDD_HIPRI_TOS;
-#ifdef HDD_WMM_DEBUG
-		hdd_info("ARP packet, tos is %d", tos);
-#endif /* HDD_WMM_DEBUG */
 	} else {
 		/* default */
-		*is_hipri = false;
-		tos = 0;
 #ifdef HDD_WMM_DEBUG
 		hdd_warn("Unhandled Protocol, using default tos");
 #endif /* HDD_WMM_DEBUG */
+		/* Give the highest priority to 802.1x packet */
+		if (eth_hdr->eth_II.h_proto ==
+			htons(HDD_ETHERTYPE_802_1_X)) {
+			tos = 0xC0;
+			*is_eapol = true;
+		} else
+			tos = 0;
 	}
 
 	dscp = (tos >> 2) & 0x3f;
@@ -1529,6 +1503,8 @@ void hdd_wmm_classify_pkt(hdd_adapter_t *adapter,
 #ifdef HDD_WMM_DEBUG
 	hdd_debug("tos is %d, dscp is %d, up is %d", tos, dscp, *user_pri);
 #endif /* HDD_WMM_DEBUG */
+
+	return;
 }
 
 /**
@@ -1548,20 +1524,20 @@ static uint16_t __hdd_get_queue_index(uint16_t up)
 /**
  * hdd_get_queue_index() - get queue index
  * @up: user priority
- * @is_hipri: high priority packet flag
+ * @is_eapol: is_eapol flag
  *
  * Return: queue_index
  */
 static
-uint16_t hdd_get_queue_index(u16 up, bool is_hipri)
+uint16_t hdd_get_queue_index(uint16_t up, bool is_eapol)
 {
-	if (qdf_unlikely(is_hipri))
+	if (qdf_unlikely(is_eapol == true))
 		return HDD_LINUX_AC_HI_PRIO;
 	return __hdd_get_queue_index(up);
 }
 #else
 static
-uint16_t hdd_get_queue_index(u16 up, bool is_hipri)
+uint16_t hdd_get_queue_index(uint16_t up, bool is_eapol)
 {
 	return __hdd_get_queue_index(up);
 }
@@ -1591,9 +1567,8 @@ uint16_t hdd_hostapd_select_queue(struct net_device *dev, struct sk_buff *skb
 	uint16_t queueIndex;
 	hdd_adapter_t *adapter = (hdd_adapter_t *) netdev_priv(dev);
 	hdd_context_t *hddctx = WLAN_HDD_GET_CTX(adapter);
-	bool is_hipri = false;
+	bool is_eapol = false;
 	int status = 0;
-
 	status = wlan_hdd_validate_context(hddctx);
 
 	if (status != 0) {
@@ -1602,9 +1577,9 @@ uint16_t hdd_hostapd_select_queue(struct net_device *dev, struct sk_buff *skb
 	}
 
 	/* Get the user priority from IP header */
-	hdd_wmm_classify_pkt(adapter, skb, &up, &is_hipri);
+	hdd_wmm_classify_pkt(adapter, skb, &up, &is_eapol);
 	skb->priority = up;
-	queueIndex = hdd_get_queue_index(skb->priority, is_hipri);
+	queueIndex = hdd_get_queue_index(skb->priority, is_eapol);
 
 	return queueIndex;
 }
@@ -1913,8 +1888,9 @@ QDF_STATUS hdd_wmm_assoc(hdd_adapter_t *pAdapter,
 					       pAdapter->hddWmmDscpToUpMap,
 					       pAdapter->sessionId);
 
-	if (!QDF_IS_STATUS_SUCCESS(status))
+	if (!QDF_IS_STATUS_SUCCESS(status)) {
 		hdd_wmm_init(pAdapter);
+	}
 
 	EXIT();
 
@@ -2292,7 +2268,7 @@ hdd_wlan_wmm_status_e hdd_wmm_delts(hdd_adapter_t *pAdapter, uint32_t handle)
 		return HDD_WLAN_WMM_STATUS_RELEASE_FAILED_BAD_PARAM;
 	}
 
-	hdd_debug("found handle 0x%x, flow %d, AC %d, context %pK",
+	hdd_info("found handle 0x%x, flow %d, AC %d, context %pK",
 		 handle, qosFlowId, acType, pQosContext);
 
 #ifndef WLAN_MDM_CODE_REDUCTION_OPT
@@ -2300,7 +2276,7 @@ hdd_wlan_wmm_status_e hdd_wmm_delts(hdd_adapter_t *pAdapter, uint32_t handle)
 		sme_qos_release_req(WLAN_HDD_GET_HAL_CTX(pAdapter),
 				    pAdapter->sessionId, qosFlowId);
 
-	hdd_debug("SME flow %d released, SME status %d", qosFlowId, smeStatus);
+	hdd_info("SME flow %d released, SME status %d", qosFlowId, smeStatus);
 
 	switch (smeStatus) {
 	case SME_QOS_STATUS_RELEASE_SUCCESS_RSP:
@@ -2382,7 +2358,7 @@ hdd_wlan_wmm_status_e hdd_wmm_checkts(hdd_adapter_t *pAdapter, uint32_t handle)
 	list_for_each_entry(pQosContext,
 			    &pAdapter->hddWmmStatus.wmmContextList, node) {
 		if (pQosContext->handle == handle) {
-			hdd_debug("found handle 0x%x, context %pK",
+			hdd_info("found handle 0x%x, context %pK",
 				 handle, pQosContext);
 
 			status = pQosContext->lastStatus;

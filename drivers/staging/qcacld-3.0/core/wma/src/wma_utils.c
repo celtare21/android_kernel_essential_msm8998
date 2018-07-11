@@ -461,8 +461,8 @@ int wma_stats_ext_event_handler(void *handle, uint8_t *event_buf,
 	alloc_len += stats_ext_info->data_len;
 
 	if (stats_ext_info->data_len > (WMI_SVC_MSG_MAX_SIZE -
-	    sizeof(*stats_ext_info)) || stats_ext_info->data_len >
-	    param_buf->num_data) {
+	    WMI_TLV_HDR_SIZE - sizeof(*stats_ext_info)) ||
+	    stats_ext_info->data_len > param_buf->num_data) {
 		WMA_LOGE("Excess data_len:%d, num_data:%d",
 			stats_ext_info->data_len, param_buf->num_data);
 		return -EINVAL;
@@ -1761,18 +1761,11 @@ static int wma_unified_link_radio_stats_event_handler(void *handle,
 	rs_results->onTimePnoScan = radio_stats->on_time_pno_scan;
 	rs_results->onTimeHs20 = radio_stats->on_time_hs20;
 	rs_results->total_num_tx_power_levels = 0;
-	if (rs_results->tx_time_per_power_level) {
-		qdf_mem_free(rs_results->tx_time_per_power_level);
-		rs_results->tx_time_per_power_level = NULL;
-	}
-	if (rs_results->channels) {
-		qdf_mem_free(rs_results->channels);
-		rs_results->channels = NULL;
-	}
-
+	rs_results->tx_time_per_power_level = NULL;
 	rs_results->numChannels = radio_stats->num_channels;
 	rs_results->on_time_host_scan = radio_stats->on_time_host_scan;
 	rs_results->on_time_lpi_scan = radio_stats->on_time_lpi_scan;
+	rs_results->channels = NULL;
 
 	if (rs_results->numChannels) {
 		rs_results->channels = (tSirWifiChannelStats *) qdf_mem_malloc(
@@ -3179,8 +3172,8 @@ int wma_stats_event_handler(void *handle, uint8_t *cmd_param_info,
 				excess_data = true;
 				break;
 			} else {
-				buf_len += sizeof(*rssi_event) *
-					rssi_event->num_per_chain_rssi_stats;
+				buf_len += rssi_event->num_per_chain_rssi_stats *
+						sizeof(*rssi_event);
 			}
 		}
 	} while (0);
@@ -3606,19 +3599,25 @@ int wma_unified_debug_print_event_handler(void *handle, uint8_t *datap,
 	uint32_t datalen;
 
 	param_buf = (WMI_DEBUG_PRINT_EVENTID_param_tlvs *) datap;
-	if (!param_buf) {
+	if (!param_buf || !param_buf->data) {
 		WMA_LOGE("Get NULL point message from FW");
 		return -ENOMEM;
 	}
 	data = param_buf->data;
 	datalen = param_buf->num_data;
+	if (datalen > WMI_SVC_MSG_MAX_SIZE) {
+		WMA_LOGE("Received data len %d exceeds max value %d",
+				datalen, WMI_SVC_MSG_MAX_SIZE);
+		return QDF_STATUS_E_FAILURE;
+	}
+	data[datalen - 1] = '\0';
 
 #ifdef BIG_ENDIAN_HOST
 	{
-		if (datalen > BIG_ENDIAN_MAX_DEBUG_BUF) {
+		if (datalen >= BIG_ENDIAN_MAX_DEBUG_BUF) {
 			WMA_LOGE("%s Invalid data len %d, limiting to max",
 				 __func__, datalen);
-			datalen = BIG_ENDIAN_MAX_DEBUG_BUF;
+			datalen = BIG_ENDIAN_MAX_DEBUG_BUF - 1;
 		}
 		char dbgbuf[BIG_ENDIAN_MAX_DEBUG_BUF] = { 0 };
 
@@ -5107,8 +5106,7 @@ QDF_STATUS wma_get_updated_scan_config(uint32_t *scan_config,
 }
 
 QDF_STATUS wma_get_updated_scan_and_fw_mode_config(uint32_t *scan_config,
-			uint32_t *fw_mode_config, uint32_t dual_mac_disable_ini,
-			uint32_t channel_select_logic_conc)
+			uint32_t *fw_mode_config, uint32_t dual_mac_disable_ini)
 {
 	tp_wma_handle wma;
 
@@ -5144,14 +5142,14 @@ QDF_STATUS wma_get_updated_scan_and_fw_mode_config(uint32_t *scan_config,
 			dual_mac_disable_ini);
 		WMI_DBS_CONC_SCAN_CFG_ASYNC_DBS_SCAN_SET(*scan_config, 0);
 		break;
+	case ENABLE_DBS_CXN_AND_DISABLE_DBS_SCAN:
+		WMA_LOGD("%s: dual_mac_disable_ini:%d ", __func__,
+			dual_mac_disable_ini);
+		WMI_DBS_CONC_SCAN_CFG_DBS_SCAN_SET(*scan_config, 0);
+		break;
 	default:
 		break;
 	}
-
-	WMI_DBS_FW_MODE_CFG_DBS_FOR_STA_PLUS_STA_SET(*fw_mode_config,
-	       WMA_CHANNEL_SELECT_LOGIC_STA_STA_GET(channel_select_logic_conc));
-	WMI_DBS_FW_MODE_CFG_DBS_FOR_STA_PLUS_P2P_SET(*fw_mode_config,
-	       WMA_CHANNEL_SELECT_LOGIC_STA_P2P_GET(channel_select_logic_conc));
 	WMA_LOGD("%s: *scan_config:%x ", __func__, *scan_config);
 	WMA_LOGD("%s: *fw_mode_config:%x ", __func__, *fw_mode_config);
 
@@ -5502,10 +5500,12 @@ bool wma_is_scan_simultaneous_capable(void)
 		return true;
 	}
 
-	if (mac->dual_mac_feature_disable != DISABLE_DBS_CXN_AND_SCAN)
-		return true;
+	if ((mac->dual_mac_feature_disable == DISABLE_DBS_CXN_AND_SCAN) ||
+	    (mac->dual_mac_feature_disable ==
+	     ENABLE_DBS_CXN_AND_DISABLE_DBS_SCAN))
+		return false;
 
-	return false;
+	return true;
 }
 
 /**
@@ -6000,11 +6000,6 @@ QDF_STATUS wma_send_vdev_up_to_fw(t_wma_handle *wma,
 	QDF_STATUS status;
 	struct wma_txrx_node *vdev = &wma->interfaces[params->vdev_id];
 
-	if (vdev->vdev_up == true) {
-		WMA_LOGD("vdev %d is already up for bssid %pM. Do not send",
-			 params->vdev_id, bssid);
-		return QDF_STATUS_SUCCESS;
-	}
 	status = wmi_unified_vdev_up_send(wma->wmi_handle, bssid, params);
 	wma_release_wakelock(&vdev->vdev_start_wakelock);
 
