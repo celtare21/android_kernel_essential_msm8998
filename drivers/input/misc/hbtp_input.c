@@ -308,16 +308,12 @@ err_input_reg_dev:
 	return error;
 }
 
-static int hbtp_input_report_events(struct hbtp_data *hbtp_data,
+static inline int hbtp_input_report_events(struct hbtp_data *hbtp_data,
 				struct hbtp_input_mt *mt_data)
 {
 	int i;
 	struct hbtp_input_touch *tch;
 
-	/*
-	* Why bother reporting 20 touches every time
-	* if we only support 10?
-	*/
 	for (i = 0; i < HBTP_MAX_FINGER / 2; i++) {
 		tch = &(mt_data->touches[i]);
 		/*
