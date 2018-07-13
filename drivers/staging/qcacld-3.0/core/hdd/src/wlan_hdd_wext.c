@@ -4346,7 +4346,7 @@ static int iw_set_commit(struct net_device *dev, struct iw_request_info *info,
  * Return: 0 on success, non-zero on error
  */
 static int __iw_get_name(struct net_device *dev,
-		       struct iw_request_info *info, union iwreq_data, char *extra)
+		       struct iw_request_info *info, char *wrqu, char *extra)
 {
 	hdd_adapter_t *adapter;
 	hdd_context_t *hdd_ctx;
@@ -4360,7 +4360,7 @@ static int __iw_get_name(struct net_device *dev,
 	if (0 != ret)
 		return ret;
 
-	strlcpy(wrqu->name, "Qcom:802.11n", IFNAMSIZ);
+	strlcpy(wrqu, "Qcom:802.11n", IFNAMSIZ);
 	EXIT();
 	return 0;
 }
@@ -4376,7 +4376,7 @@ static int __iw_get_name(struct net_device *dev,
  */
 static int iw_get_name(struct net_device *dev,
 			 struct iw_request_info *info,
-			 union iwreq_data, char *extra)
+			 char *wrqu, char *extra)
 {
 	int ret;
 
