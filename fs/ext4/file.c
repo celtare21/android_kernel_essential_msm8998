@@ -559,13 +559,8 @@ static loff_t ext4_seek_data(struct file *file, loff_t offset, loff_t maxsize)
 	inode_lock(inode);
 
 	isize = i_size_read(inode);
-<<<<<<< HEAD
 	if (offset < 0 || offset >= isize) {
-		mutex_unlock(&inode->i_mutex);
-=======
-	if (offset >= isize) {
-		inode_unlock(inode);
->>>>>>> 5955102c9984... wrappers for ->i_mutex access
+                inode_unlock(inode);
 		return -ENXIO;
 	}
 
@@ -637,13 +632,8 @@ static loff_t ext4_seek_hole(struct file *file, loff_t offset, loff_t maxsize)
 	inode_lock(inode);
 
 	isize = i_size_read(inode);
-<<<<<<< HEAD
 	if (offset < 0 || offset >= isize) {
-		mutex_unlock(&inode->i_mutex);
-=======
-	if (offset >= isize) {
-		inode_unlock(inode);
->>>>>>> 5955102c9984... wrappers for ->i_mutex access
+                inode_unlock(inode);
 		return -ENXIO;
 	}
 
