@@ -16,6 +16,12 @@
 #define DTS_EAGLE_DRIVER_FIRST_MINOR    1
 #define DTS_EAGLE_DRIVER_MINOR_CNT      6
 
+static int first_minor = DTS_EAGLE_DRIVER_FIRST_MINOR;
+
+static int major = 0;		/* default to dynamic major */
+module_param(major, int, 0);
+MODULE_PARM_DESC(major, "Major device number");
+
 enum {
 	AUDIO_DEVICE_OUT_EARPIECE = 0x1,
 	AUDIO_DEVICE_OUT_SPEAKER = 0x2,
@@ -590,9 +596,15 @@ static int __init dts_eagle_drv_init(void)
 	dts_eagle_drv_dbg_msg("%s", __func__);
 	printk(KERN_INFO "dts_eagle\n");
 
-	ret = alloc_chrdev_region(&dts_eagle_dev,
-		DTS_EAGLE_DRIVER_FIRST_MINOR, DTS_EAGLE_DRIVER_MINOR_CNT,
-	     "dts_eagle_ioctl");
+	if (major) {
+		dts_eagle_dev = MKDEV(major, first_minor);
+		ret = register_chrdev_region(dts_eagle_dev, DTS_EAGLE_DRIVER_MINOR_CNT, "dts_eagle_ioctl");
+	} else {
+		ret = alloc_chrdev_region(&dts_eagle_dev,
+			first_minor, DTS_EAGLE_DRIVER_MINOR_CNT,
+			"dts_eagle_ioctl");
+		major = MAJOR(dts_eagle_dev);
+	}
 
 	if (ret < 0)
 		return ret;
@@ -609,7 +621,7 @@ static int __init dts_eagle_drv_init(void)
 
 	if (ret) {
 		cdev_del(&dts_eagle_char_dev);
-		unregister_chrdev_region(dts_eagle_dev,
+		unregister_chrdev_region(MKDEV(major, first_minor),
 			DTS_EAGLE_DRIVER_MINOR_CNT);
 
 		return PTR_ERR(p_dts_eagle_class);
@@ -621,8 +633,8 @@ static int __init dts_eagle_drv_init(void)
 	if (ret) {
 		class_destroy(p_dts_eagle_class);
 		cdev_del(&dts_eagle_char_dev);
-		unregister_chrdev_region(dts_eagle_dev,
-			DTS_EAGLE_DRIVER_MINOR_CNT);
+                unregister_chrdev_region(MKDEV(major, first_minor),
+                        DTS_EAGLE_DRIVER_MINOR_CNT);
 
 		return PTR_ERR(dev_ret);
 	}
@@ -638,7 +650,8 @@ static void __exit dts_eagle_drv_exit(void)
 	device_destroy(p_dts_eagle_class, dts_eagle_dev);
 	class_destroy(p_dts_eagle_class);
 	cdev_del(&dts_eagle_char_dev);
-	unregister_chrdev_region(dts_eagle_dev, DTS_EAGLE_DRIVER_MINOR_CNT);
+        unregister_chrdev_region(MKDEV(major, first_minor),
+	        DTS_EAGLE_DRIVER_MINOR_CNT);
 
 	dts_eagle_drv_dbg_msg("%s", __func__);
 	--_ref_cnt;
