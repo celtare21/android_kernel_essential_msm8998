@@ -669,8 +669,8 @@ int blk_queue_enter(struct request_queue *q, gfp_t gfp)
 			return -EBUSY;
 
 		wait_event(q->mq_freeze_wq,
-				!atomic_read(&q->mq_freeze_depth) ||
-				blk_queue_dying(q));
+			   !atomic_read(&q->mq_freeze_depth) ||
+			   blk_queue_dying(q));
 		if (blk_queue_dying(q))
 			return -ENODEV;
 	}
