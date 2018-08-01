@@ -314,7 +314,7 @@ static int setxattr(struct inode *host, const char *name, const void *value,
 	union ubifs_key key;
 	int err, type;
 
-	ubifs_assert(inode_is_locked(host));
+	ubifs_assert(mutex_is_locked(&host->i_mutex));
 
 	if (size > UBIFS_MAX_INO_DATA)
 		return -ERANGE;
@@ -552,7 +552,7 @@ int ubifs_removexattr(struct dentry *dentry, const char *name)
 
 	dbg_gen("xattr '%s', ino %lu ('%pd')", name,
 		host->i_ino, dentry);
-	ubifs_assert(inode_is_locked(host));
+	ubifs_assert(mutex_is_locked(&host->i_mutex));
 
 	err = check_namespace(&nm);
 	if (err < 0)

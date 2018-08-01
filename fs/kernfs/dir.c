@@ -1472,9 +1472,9 @@ static loff_t kernfs_dir_fop_llseek(struct file *file, loff_t offset,
 	struct inode *inode = file_inode(file);
 	loff_t ret;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 	ret = generic_file_llseek(file, offset, whence);
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 
 	return ret;
 }

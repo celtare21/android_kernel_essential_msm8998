@@ -265,7 +265,7 @@ fh_lock_nested(struct svc_fh *fhp, unsigned int subclass)
 	}
 
 	inode = d_inode(dentry);
-	inode_lock_nested(inode, subclass);
+	mutex_lock_nested(&inode->i_mutex, subclass);
 	fill_pre_wcc(fhp);
 	fhp->fh_locked = true;
 }
@@ -284,7 +284,7 @@ fh_unlock(struct svc_fh *fhp)
 {
 	if (fhp->fh_locked) {
 		fill_post_wcc(fhp);
-		inode_unlock(d_inode(fhp->fh_dentry));
+		mutex_unlock(&d_inode(fhp->fh_dentry)->i_mutex);
 		fhp->fh_locked = false;
 	}
 }

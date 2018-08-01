@@ -792,7 +792,7 @@ static ssize_t jfs_quota_write(struct super_block *sb, int type,
 	struct buffer_head tmp_bh;
 	struct buffer_head *bh;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 	while (towrite > 0) {
 		tocopy = sb->s_blocksize - offset < towrite ?
 				sb->s_blocksize - offset : towrite;
@@ -824,7 +824,7 @@ static ssize_t jfs_quota_write(struct super_block *sb, int type,
 	}
 out:
 	if (len == towrite) {
-		inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 		return err;
 	}
 	if (inode->i_size < off+len-towrite)
@@ -832,7 +832,7 @@ out:
 	inode->i_version++;
 	inode->i_mtime = inode->i_ctime = CURRENT_TIME;
 	mark_inode_dirty(inode);
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	return len - towrite;
 }
 

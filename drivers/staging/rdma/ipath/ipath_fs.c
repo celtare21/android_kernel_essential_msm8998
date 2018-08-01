@@ -82,14 +82,14 @@ static int create_file(const char *name, umode_t mode,
 {
 	int error;
 
-	inode_lock(d_inode(parent));
+	mutex_lock(&d_inode(parent)->i_mutex);
 	*dentry = lookup_one_len(name, parent, strlen(name));
 	if (!IS_ERR(*dentry))
 		error = ipathfs_mknod(d_inode(parent), *dentry,
 				      mode, fops, data);
 	else
 		error = PTR_ERR(*dentry);
-	inode_unlock(d_inode(parent));
+	mutex_unlock(&d_inode(parent)->i_mutex);
 
 	return error;
 }
@@ -295,7 +295,7 @@ static int remove_device_files(struct super_block *sb,
 	int ret;
 
 	root = dget(sb->s_root);
-	inode_lock(d_inode(root));
+	mutex_lock(&d_inode(root)->i_mutex);
 	snprintf(unit, sizeof unit, "%02d", dd->ipath_unit);
 	dir = lookup_one_len(unit, root, strlen(unit));
 
@@ -311,7 +311,7 @@ static int remove_device_files(struct super_block *sb,
 	ret = simple_rmdir(d_inode(root), dir);
 
 bail:
-	inode_unlock(d_inode(root));
+	mutex_unlock(&d_inode(root)->i_mutex);
 	dput(root);
 	return ret;
 }

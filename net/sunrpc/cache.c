@@ -771,7 +771,7 @@ static ssize_t cache_read(struct file *filp, char __user *buf, size_t count,
 	if (count == 0)
 		return 0;
 
-	inode_lock(inode); /* protect against multiple concurrent
+	mutex_lock(&inode->i_mutex); /* protect against multiple concurrent
 			      * readers on this file */
  again:
 	spin_lock(&queue_lock);
@@ -784,7 +784,7 @@ static ssize_t cache_read(struct file *filp, char __user *buf, size_t count,
 	}
 	if (rp->q.list.next == &cd->queue) {
 		spin_unlock(&queue_lock);
-		inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 		WARN_ON_ONCE(rp->offset);
 		return 0;
 	}
@@ -838,7 +838,7 @@ static ssize_t cache_read(struct file *filp, char __user *buf, size_t count,
 	}
 	if (err == -EAGAIN)
 		goto again;
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	return err ? err :  count;
 }
 
@@ -909,9 +909,9 @@ static ssize_t cache_write(struct file *filp, const char __user *buf,
 	if (!cd->cache_parse)
 		goto out;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 	ret = cache_downcall(mapping, buf, count, cd);
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 out:
 	return ret;
 }

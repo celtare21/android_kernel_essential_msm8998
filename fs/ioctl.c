@@ -411,9 +411,9 @@ int generic_block_fiemap(struct inode *inode,
 			 u64 len, get_block_t *get_block)
 {
 	int ret;
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 	ret = __generic_block_fiemap(inode, fieinfo, start, len, get_block);
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	return ret;
 }
 EXPORT_SYMBOL(generic_block_fiemap);

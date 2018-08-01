@@ -101,13 +101,13 @@ int nfs42_proc_allocate(struct file *filep, loff_t offset, loff_t len)
 	if (!nfs_server_capable(inode, NFS_CAP_ALLOCATE))
 		return -EOPNOTSUPP;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 
 	err = nfs42_proc_fallocate(&msg, filep, offset, len);
 	if (err == -EOPNOTSUPP)
 		NFS_SERVER(inode)->caps &= ~NFS_CAP_ALLOCATE;
 
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	return err;
 }
 
@@ -123,7 +123,7 @@ int nfs42_proc_deallocate(struct file *filep, loff_t offset, loff_t len)
 		return -EOPNOTSUPP;
 
 	nfs_wb_all(inode);
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 
 	err = nfs42_proc_fallocate(&msg, filep, offset, len);
 	if (err == 0)
@@ -131,7 +131,7 @@ int nfs42_proc_deallocate(struct file *filep, loff_t offset, loff_t len)
 	if (err == -EOPNOTSUPP)
 		NFS_SERVER(inode)->caps &= ~NFS_CAP_DEALLOCATE;
 
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	return err;
 }
 

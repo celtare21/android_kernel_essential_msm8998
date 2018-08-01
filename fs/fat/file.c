@@ -20,9 +20,9 @@ static int fat_ioctl_get_attributes(struct inode *inode, u32 __user *user_attr)
 {
 	u32 attr;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 	attr = fat_make_attrs(inode);
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 
 	return put_user(attr, user_attr);
 }
@@ -43,7 +43,7 @@ static int fat_ioctl_set_attributes(struct file *file, u32 __user *user_attr)
 	err = mnt_want_write_file(file);
 	if (err)
 		goto out;
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 
 	/*
 	 * ATTR_VOLUME and ATTR_DIR cannot be changed; this also
@@ -105,7 +105,7 @@ static int fat_ioctl_set_attributes(struct file *file, u32 __user *user_attr)
 	fat_save_attrs(inode, attr);
 	mark_inode_dirty(inode);
 out_unlock_inode:
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	mnt_drop_write_file(file);
 out:
 	return err;
@@ -215,6 +215,7 @@ out:
 	return err;
 }
 
+/* Free all clusters after the skip'th cluster. */
 static int fat_free(struct inode *inode, int skip)
 {
 	struct super_block *sb = inode->i_sb;

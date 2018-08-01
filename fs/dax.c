@@ -218,10 +218,10 @@ ssize_t dax_do_io(struct kiocb *iocb, struct inode *inode,
 
 	if ((flags & DIO_LOCKING) && iov_iter_rw(iter) == READ) {
 		struct address_space *mapping = inode->i_mapping;
-		inode_lock(inode);
+		mutex_lock(&inode->i_mutex);
 		retval = filemap_write_and_wait_range(mapping, pos, end - 1);
 		if (retval) {
-			inode_unlock(inode);
+			mutex_unlock(&inode->i_mutex);
 			goto out;
 		}
 	}
@@ -233,7 +233,7 @@ ssize_t dax_do_io(struct kiocb *iocb, struct inode *inode,
 	retval = dax_io(inode, iter, pos, end, get_block, &bh);
 
 	if ((flags & DIO_LOCKING) && iov_iter_rw(iter) == READ)
-		inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 
 	if ((retval > 0) && end_io)
 		end_io(iocb, pos, retval, bh.b_private);

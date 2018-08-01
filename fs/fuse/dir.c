@@ -992,7 +992,7 @@ int fuse_reverse_inval_entry(struct super_block *sb, u64 parent_nodeid,
 	if (!parent)
 		return -ENOENT;
 
-	inode_lock(parent);
+	mutex_lock(&parent->i_mutex);
 	if (!S_ISDIR(parent->i_mode))
 		goto unlock;
 
@@ -1010,7 +1010,7 @@ int fuse_reverse_inval_entry(struct super_block *sb, u64 parent_nodeid,
 	fuse_invalidate_entry(entry);
 
 	if (child_nodeid != 0 && d_really_is_positive(entry)) {
-		inode_lock(d_inode(entry));
+		mutex_lock(&d_inode(entry)->i_mutex);
 		if (get_node_id(d_inode(entry)) != child_nodeid) {
 			err = -ENOENT;
 			goto badentry;
@@ -1031,7 +1031,7 @@ int fuse_reverse_inval_entry(struct super_block *sb, u64 parent_nodeid,
 		clear_nlink(d_inode(entry));
 		err = 0;
  badentry:
-		inode_unlock(d_inode(entry));
+		mutex_unlock(&d_inode(entry)->i_mutex);
 		if (!err)
 			d_delete(entry);
 	} else {
@@ -1040,7 +1040,7 @@ int fuse_reverse_inval_entry(struct super_block *sb, u64 parent_nodeid,
 	dput(entry);
 
  unlock:
-	inode_unlock(parent);
+	mutex_unlock(&parent->i_mutex);
 	iput(parent);
 	return err;
 }
@@ -1549,7 +1549,7 @@ void fuse_set_nowrite(struct inode *inode)
 	struct fuse_conn *fc = get_fuse_conn(inode);
 	struct fuse_inode *fi = get_fuse_inode(inode);
 
-	BUG_ON(!inode_is_locked(inode));
+	BUG_ON(!mutex_is_locked(&inode->i_mutex));
 
 	spin_lock(&fc->lock);
 	BUG_ON(fi->writectr < 0);

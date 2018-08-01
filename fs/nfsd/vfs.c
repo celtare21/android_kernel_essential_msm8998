@@ -516,9 +516,9 @@ __be32 nfsd4_set_nfs4_label(struct svc_rqst *rqstp, struct svc_fh *fhp,
 
 	dentry = fhp->fh_dentry;
 
-	inode_lock(d_inode(dentry));
+	mutex_lock(&d_inode(dentry)->i_mutex);
 	host_error = security_inode_setsecctx(dentry, label->data, label->len);
-	inode_unlock(d_inode(dentry));
+	mutex_unlock(&d_inode(dentry)->i_mutex);
 	return nfserrno(host_error);
 }
 #else

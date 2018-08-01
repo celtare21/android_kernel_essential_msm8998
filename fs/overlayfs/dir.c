@@ -170,7 +170,7 @@ static int ovl_create_upper(struct dentry *dentry, struct inode *inode,
 	struct dentry *newdentry;
 	int err;
 
-	inode_lock_nested(udir, I_MUTEX_PARENT);
+	mutex_lock_nested(&udir->i_mutex, I_MUTEX_PARENT);
 	newdentry = lookup_one_len(dentry->d_name.name, upperdir,
 				   dentry->d_name.len);
 	err = PTR_ERR(newdentry);
@@ -188,7 +188,7 @@ static int ovl_create_upper(struct dentry *dentry, struct inode *inode,
 out_dput:
 	dput(newdentry);
 out_unlock:
-	inode_unlock(udir);
+	mutex_unlock(&udir->i_mutex);
 	return err;
 }
 
@@ -261,9 +261,9 @@ static struct dentry *ovl_clear_empty(struct dentry *dentry,
 	if (err)
 		goto out_cleanup;
 
-	inode_lock(opaquedir->d_inode);
+	mutex_lock(&opaquedir->d_inode->i_mutex);
 	err = ovl_set_attr(opaquedir, &stat);
-	inode_unlock(opaquedir->d_inode);
+	mutex_unlock(&opaquedir->d_inode->i_mutex);
 	if (err)
 		goto out_cleanup;
 
@@ -596,7 +596,7 @@ static int ovl_remove_upper(struct dentry *dentry, bool is_dir)
 	struct dentry *upper;
 	int err;
 
-        inode_lock_nested(dir, I_MUTEX_PARENT);
+	mutex_lock_nested(&dir->i_mutex, I_MUTEX_PARENT);
 	upper = lookup_one_len(dentry->d_name.name, upperdir,
 			       dentry->d_name.len);
 	err = PTR_ERR(upper);
@@ -622,7 +622,7 @@ static int ovl_remove_upper(struct dentry *dentry, bool is_dir)
 	if (!err)
 		d_drop(dentry);
 out_unlock:
-        inode_unlock(dir);
+	mutex_unlock(&dir->i_mutex);
 
 	return err;
 }

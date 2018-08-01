@@ -141,11 +141,11 @@ nfs4_file_fsync(struct file *file, loff_t start, loff_t end, int datasync)
 		ret = filemap_write_and_wait_range(inode->i_mapping, start, end);
 		if (ret != 0)
 			break;
-		inode_lock(inode);
+		mutex_lock(&inode->i_mutex);
 		ret = nfs_file_fsync_commit(file, start, end, datasync);
 		if (!ret)
 			ret = pnfs_sync_inode(inode, !!datasync);
-		inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 		/*
 		 * If nfs_file_fsync_commit detected a server reboot, then
 		 * resend all dirty pages that might have been covered by
@@ -257,13 +257,13 @@ nfs42_ioctl_clone(struct file *dst_file, unsigned long srcfd,
 
 	/* XXX: do we lock at all? what if server needs CB_RECALL_LAYOUT? */
 	if (same_inode) {
-		inode_lock(src_inode);
+		mutex_lock(&src_inode->i_mutex);
 	} else if (dst_inode < src_inode) {
-		inode_lock_nested(dst_inode, I_MUTEX_PARENT);
-		inode_lock_nested(src_inode, I_MUTEX_CHILD);
+		mutex_lock_nested(&dst_inode->i_mutex, I_MUTEX_PARENT);
+		mutex_lock_nested(&src_inode->i_mutex, I_MUTEX_CHILD);
 	} else {
-		inode_lock_nested(src_inode, I_MUTEX_PARENT);
-		inode_lock_nested(dst_inode, I_MUTEX_CHILD);
+		mutex_lock_nested(&src_inode->i_mutex, I_MUTEX_PARENT);
+		mutex_lock_nested(&dst_inode->i_mutex, I_MUTEX_CHILD);
 	}
 
 	/* flush all pending writes on both src and dst so that server
@@ -284,13 +284,13 @@ nfs42_ioctl_clone(struct file *dst_file, unsigned long srcfd,
 
 out_unlock:
 	if (same_inode) {
-		inode_unlock(src_inode);
+		mutex_unlock(&src_inode->i_mutex);
 	} else if (dst_inode < src_inode) {
-		inode_unlock(src_inode);
-		inode_unlock(dst_inode);
+		mutex_unlock(&src_inode->i_mutex);
+		mutex_unlock(&dst_inode->i_mutex);
 	} else {
-		inode_unlock(dst_inode);
-		inode_unlock(src_inode);
+		mutex_unlock(&dst_inode->i_mutex);
+		mutex_unlock(&src_inode->i_mutex);
 	}
 out_fput:
 	fdput(src_file);

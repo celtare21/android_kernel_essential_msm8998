@@ -51,9 +51,9 @@ static ssize_t efivarfs_file_write(struct file *file,
 		d_delete(file->f_path.dentry);
 		dput(file->f_path.dentry);
 	} else {
-		inode_lock(inode);
+		mutex_lock(&inode->i_mutex);
 		i_size_write(inode, datasize + sizeof(attributes));
-		inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 	}
 
 	bytes = count;

@@ -66,11 +66,11 @@ int ovl_setattr(struct dentry *dentry, struct iattr *attr)
 		if (attr->ia_valid & (ATTR_KILL_SUID|ATTR_KILL_SGID))
 			attr->ia_valid &= ~ATTR_MODE;
 
-                inode_lock(upperdentry->d_inode);
+		mutex_lock(&upperdentry->d_inode->i_mutex);
 		err = notify_change(upperdentry, attr, NULL);
 		if (!err)
 			ovl_copyattr(upperdentry->d_inode, dentry->d_inode);
-                inode_unlock(upperdentry->d_inode);
+		mutex_unlock(&upperdentry->d_inode->i_mutex);
 	}
 	ovl_drop_write(dentry);
 out:

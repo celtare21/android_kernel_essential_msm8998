@@ -58,10 +58,10 @@ int do_truncate2(struct vfsmount *mnt, struct dentry *dentry, loff_t length,
 	if (ret)
 		newattrs.ia_valid |= ret | ATTR_FORCE;
 
-	inode_lock(dentry->d_inode);
+	mutex_lock(&dentry->d_inode->i_mutex);
 	/* Note any delegations or leases have already been broken: */
 	ret = notify_change2(mnt, dentry, &newattrs, NULL);
-        inode_unlock(dentry->d_inode);
+	mutex_unlock(&dentry->d_inode->i_mutex);
 	return ret;
 }
 int do_truncate(struct dentry *dentry, loff_t length, unsigned int time_attrs,
@@ -523,7 +523,7 @@ static int chmod_common(struct path *path, umode_t mode)
 	if (error)
 		return error;
 retry_deleg:
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 	error = security_path_chmod(path, mode);
 	if (error)
 		goto out_unlock;
@@ -531,7 +531,7 @@ retry_deleg:
 	newattrs.ia_valid = ATTR_MODE | ATTR_CTIME;
 	error = notify_change2(path->mnt, path->dentry, &newattrs, &delegated_inode);
 out_unlock:
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	if (delegated_inode) {
 		error = break_deleg_wait(&delegated_inode);
 		if (!error)
@@ -606,11 +606,11 @@ retry_deleg:
 	if (!S_ISDIR(inode->i_mode))
 		newattrs.ia_valid |=
 			ATTR_KILL_SUID | ATTR_KILL_SGID | ATTR_KILL_PRIV;
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 	error = security_path_chown(path, uid, gid);
 	if (!error)
 		error = notify_change2(path->mnt, path->dentry, &newattrs, &delegated_inode);
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	if (delegated_inode) {
 		error = break_deleg_wait(&delegated_inode);
 		if (!error)

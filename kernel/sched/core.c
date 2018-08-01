@@ -233,9 +233,9 @@ sched_feat_write(struct file *filp, const char __user *ubuf,
 
 	/* Ensure the static_key remains in a consistent state */
 	inode = file_inode(filp);
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 	i = sched_feat_set(cmp);
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	if (i == __SCHED_FEAT_NR)
 		return -EINVAL;
 

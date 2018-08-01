@@ -2335,10 +2335,10 @@ static void ext4_orphan_cleanup(struct super_block *sb,
 					__func__, inode->i_ino, inode->i_size);
 			jbd_debug(2, "truncating inode %lu to %lld bytes\n",
 				  inode->i_ino, inode->i_size);
-			inode_lock(inode);
+			mutex_lock(&inode->i_mutex);
 			truncate_inode_pages(inode->i_mapping, inode->i_size);
 			ext4_truncate(inode);
-			inode_unlock(inode);
+			mutex_unlock(&inode->i_mutex);
 			nr_truncates++;
 		} else {
 			if (test_opt(sb, DEBUG))

@@ -654,9 +654,9 @@ int nfs_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *stat)
 	trace_nfs_getattr_enter(inode);
 	/* Flush out writes to the server in order to update c/mtime.  */
 	if (S_ISREG(inode->i_mode)) {
-		inode_lock(inode);
+		mutex_lock(&inode->i_mutex);
 		err = nfs_sync_inode(inode);
-		inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 		if (err)
 			goto out;
 	}
@@ -1144,9 +1144,9 @@ static int __nfs_revalidate_mapping(struct inode *inode,
 	spin_unlock(&inode->i_lock);
 	trace_nfs_invalidate_mapping_enter(inode);
 	if (may_lock) {
-		inode_lock(inode);
+		mutex_lock(&inode->i_mutex);
 		ret = nfs_invalidate_mapping(inode, mapping);
-		inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 	} else
 		ret = nfs_invalidate_mapping(inode, mapping);
 	trace_nfs_invalidate_mapping_exit(inode, ret);

@@ -236,7 +236,7 @@ long ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		flags = ext4_mask_flags(inode->i_mode, flags);
 
 		err = -EPERM;
-                inode_lock(inode);
+		mutex_lock(&inode->i_mutex);
 		/* Is it quota file? Do not allow user to mess with it */
 		if (IS_NOQUOTA(inode))
 			goto flags_out;
@@ -318,7 +318,7 @@ flags_err:
 		}
 
 flags_out:
-                inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 		mnt_drop_write_file(filp);
 		return err;
 	}
@@ -349,7 +349,7 @@ flags_out:
 			goto setversion_out;
 		}
 
-		inode_lock(inode);
+		mutex_lock(&inode->i_mutex);
 		handle = ext4_journal_start(inode, EXT4_HT_INODE, 1);
 		if (IS_ERR(handle)) {
 			err = PTR_ERR(handle);
@@ -364,7 +364,7 @@ flags_out:
 		ext4_journal_stop(handle);
 
 unlock_out:
-		inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 setversion_out:
 		mnt_drop_write_file(filp);
 		return err;
@@ -510,9 +510,9 @@ group_add_out:
 		 * ext4_ext_swap_inode_data before we switch the
 		 * inode format to prevent read.
 		 */
-		inode_lock((inode));
+		mutex_lock(&(inode->i_mutex));
 		err = ext4_ext_migrate(inode);
-		inode_unlock((inode));
+		mutex_unlock(&(inode->i_mutex));
 		mnt_drop_write_file(filp);
 		return err;
 	}

@@ -2725,11 +2725,11 @@ ssize_t generic_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	struct inode *inode = file->f_mapping->host;
 	ssize_t ret;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 	ret = generic_write_checks(iocb, from);
 	if (ret > 0)
 		ret = __generic_file_write_iter(iocb, from);
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 
 	if (ret > 0) {
 		ssize_t err;

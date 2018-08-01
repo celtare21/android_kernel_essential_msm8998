@@ -378,9 +378,9 @@ static int hostfs_fsync(struct file *file, loff_t start, loff_t end,
 	if (ret)
 		return ret;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 	ret = fsync_file(HOSTFS_I(inode)->fd, datasync);
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 
 	return ret;
 }

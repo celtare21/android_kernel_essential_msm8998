@@ -2013,9 +2013,9 @@ SYSCALL_DEFINE1(swapoff, const char __user *, specialfile)
 		set_blocksize(bdev, old_block_size);
 		blkdev_put(bdev, FMODE_READ | FMODE_WRITE | FMODE_EXCL);
 	} else {
-		inode_lock(inode);
+		mutex_lock(&inode->i_mutex);
 		inode->i_flags &= ~S_SWAPFILE;
-		inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 	}
 	filp_close(swap_file, NULL);
 
@@ -2240,7 +2240,7 @@ static int claim_swapfile(struct swap_info_struct *p, struct inode *inode)
 		p->flags |= SWP_BLKDEV;
 	} else if (S_ISREG(inode->i_mode)) {
 		p->bdev = inode->i_sb->s_bdev;
-		inode_lock(inode);
+		mutex_lock(&inode->i_mutex);
 		if (IS_SWAPFILE(inode))
 			return -EBUSY;
 	} else
@@ -2479,7 +2479,7 @@ SYSCALL_DEFINE2(swapon, const char __user *, specialfile, int, swap_flags)
 	mapping = swap_file->f_mapping;
 	inode = mapping->host;
 
-	/* If S_ISREG(inode->i_mode) will do inode_lock(inode); */
+	/* If S_ISREG(inode->i_mode) will do mutex_lock(&inode->i_mutex); */
 	error = claim_swapfile(p, inode);
 	if (unlikely(error))
 		goto bad_swap;
@@ -2628,7 +2628,7 @@ bad_swap:
 	vfree(cluster_info);
 	if (swap_file) {
 		if (inode && S_ISREG(inode->i_mode)) {
-			inode_unlock(inode);
+			mutex_unlock(&inode->i_mutex);
 			inode = NULL;
 		}
 		filp_close(swap_file, NULL);
@@ -2641,7 +2641,7 @@ out:
 	if (name)
 		putname(name);
 	if (inode && S_ISREG(inode->i_mode))
-		inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 	return error;
 }
 

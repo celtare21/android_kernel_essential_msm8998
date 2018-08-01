@@ -393,9 +393,9 @@ static int sel_open_policy(struct inode *inode, struct file *filp)
 		goto err;
 
 	if (i_size_read(inode) != security_policydb_len()) {
-		inode_lock(inode);
+		mutex_lock(&inode->i_mutex);
 		i_size_write(inode, security_policydb_len());
-		inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 	}
 
 	rc = security_read_policy(&plm->data, &plm->len);

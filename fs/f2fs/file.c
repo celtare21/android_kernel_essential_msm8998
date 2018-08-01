@@ -332,7 +332,7 @@ static loff_t f2fs_seek_block(struct file *file, loff_t offset, int whence)
 	loff_t isize;
 	int err = 0;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 
 	isize = i_size_read(inode);
 	if (offset >= isize)
@@ -387,10 +387,10 @@ static loff_t f2fs_seek_block(struct file *file, loff_t offset, int whence)
 found:
 	if (whence == SEEK_HOLE && data_ofs > isize)
 		data_ofs = isize;
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	return vfs_setpos(file, data_ofs, maxbytes);
 fail:
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	return -ENXIO;
 }
 
@@ -1226,7 +1226,7 @@ static long f2fs_fallocate(struct file *file, int mode,
 			FALLOC_FL_INSERT_RANGE))
 		return -EOPNOTSUPP;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 
 	if (mode & FALLOC_FL_PUNCH_HOLE) {
 		if (offset >= inode->i_size)
@@ -1249,7 +1249,7 @@ static long f2fs_fallocate(struct file *file, int mode,
 	}
 
 out:
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 
 	trace_f2fs_fallocate(inode, mode, offset, len, ret);
 	return ret;
@@ -1313,13 +1313,13 @@ static int f2fs_ioc_setflags(struct file *filp, unsigned long arg)
 
 	flags = f2fs_mask_flags(inode->i_mode, flags);
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 
 	oldflags = fi->i_flags;
 
 	if ((flags ^ oldflags) & (FS_APPEND_FL | FS_IMMUTABLE_FL)) {
 		if (!capable(CAP_LINUX_IMMUTABLE)) {
-			inode_unlock(inode);
+			mutex_unlock(&inode->i_mutex);
 			ret = -EPERM;
 			goto out;
 		}
@@ -1328,7 +1328,7 @@ static int f2fs_ioc_setflags(struct file *filp, unsigned long arg)
 	flags = flags & FS_FL_USER_MODIFIABLE;
 	flags |= oldflags & ~FS_FL_USER_MODIFIABLE;
 	fi->i_flags = flags;
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 
 	f2fs_set_inode_flags(inode);
 	inode->i_ctime = CURRENT_TIME;
@@ -1652,9 +1652,9 @@ static int f2fs_ioc_write_checkpoint(struct file *filp, unsigned long arg)
 
 	cpc.reason = __get_cp_reason(sbi);
 
-        inode_lock(inode);
+	mutex_lock(&sbi->gc_mutex);
 	write_checkpoint(sbi, &cpc);
-        inode_unlock(inode);
+	mutex_unlock(&sbi->gc_mutex);
 
 	return 0;
 }

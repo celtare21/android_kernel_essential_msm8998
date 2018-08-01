@@ -340,9 +340,9 @@ static loff_t block_llseek(struct file *file, loff_t offset, int whence)
 	struct inode *bd_inode = file->f_mapping->host;
 	loff_t retval;
 
-	inode_lock(bd_inode);
+	mutex_lock(&bd_inode->i_mutex);
 	retval = fixed_size_llseek(file, offset, whence, i_size_read(bd_inode));
-	inode_unlock(bd_inode);
+	mutex_unlock(&bd_inode->i_mutex);
 	return retval;
 }
 	
@@ -1164,9 +1164,9 @@ void bd_set_size(struct block_device *bdev, loff_t size)
 {
 	unsigned bsize = bdev_logical_block_size(bdev);
 
-	inode_lock(bdev->bd_inode);
+	mutex_lock(&bdev->bd_inode->i_mutex);
 	i_size_write(bdev->bd_inode, size);
-	inode_unlock(bdev->bd_inode);
+	mutex_unlock(&bdev->bd_inode->i_mutex);
 	while (bsize < PAGE_CACHE_SIZE) {
 		if (size & bsize)
 			break;

@@ -5719,7 +5719,7 @@ int ocfs2_remove_btree_range(struct inode *inode,
 		goto bail;
 	}
 
-	inode_lock(tl_inode);
+	mutex_lock(&tl_inode->i_mutex);
 
 	if (ocfs2_truncate_log_needs_flush(osb)) {
 		ret = __ocfs2_flush_truncate_log(osb);
@@ -5776,7 +5776,7 @@ int ocfs2_remove_btree_range(struct inode *inode,
 out_commit:
 	ocfs2_commit_trans(osb, handle);
 out:
-	inode_unlock(tl_inode);
+	mutex_unlock(&tl_inode->i_mutex);
 bail:
 	if (meta_ac)
 		ocfs2_free_alloc_context(meta_ac);
@@ -5832,7 +5832,7 @@ int ocfs2_truncate_log_append(struct ocfs2_super *osb,
 	struct ocfs2_dinode *di;
 	struct ocfs2_truncate_log *tl;
 
-	BUG_ON(inode_trylock(tl_inode));
+	BUG_ON(mutex_trylock(&tl_inode->i_mutex));
 
 	start_cluster = ocfs2_blocks_to_clusters(osb->sb, start_blk);
 
@@ -5980,7 +5980,7 @@ int __ocfs2_flush_truncate_log(struct ocfs2_super *osb)
 	struct ocfs2_dinode *di;
 	struct ocfs2_truncate_log *tl;
 
-	BUG_ON(inode_trylock(tl_inode));
+	BUG_ON(mutex_trylock(&tl_inode->i_mutex));
 
 	di = (struct ocfs2_dinode *) tl_bh->b_data;
 
@@ -6008,7 +6008,7 @@ int __ocfs2_flush_truncate_log(struct ocfs2_super *osb)
 		goto out;
 	}
 
-	inode_lock(data_alloc_inode);
+	mutex_lock(&data_alloc_inode->i_mutex);
 
 	status = ocfs2_inode_lock(data_alloc_inode, &data_alloc_bh, 1);
 	if (status < 0) {
@@ -6035,7 +6035,7 @@ out_unlock:
 	ocfs2_inode_unlock(data_alloc_inode, 1);
 
 out_mutex:
-	inode_unlock(data_alloc_inode);
+	mutex_unlock(&data_alloc_inode->i_mutex);
 	iput(data_alloc_inode);
 
 out:
@@ -6047,9 +6047,9 @@ int ocfs2_flush_truncate_log(struct ocfs2_super *osb)
 	int status;
 	struct inode *tl_inode = osb->osb_tl_inode;
 
-	inode_lock(tl_inode);
+	mutex_lock(&tl_inode->i_mutex);
 	status = __ocfs2_flush_truncate_log(osb);
-	inode_unlock(tl_inode);
+	mutex_unlock(&tl_inode->i_mutex);
 
 	return status;
 }
@@ -6209,7 +6209,7 @@ int ocfs2_complete_truncate_log_recovery(struct ocfs2_super *osb,
 		(unsigned long long)le64_to_cpu(tl_copy->i_blkno),
 		num_recs);
 
-	inode_lock(tl_inode);
+	mutex_lock(&tl_inode->i_mutex);
 	for(i = 0; i < num_recs; i++) {
 		if (ocfs2_truncate_log_needs_flush(osb)) {
 			status = __ocfs2_flush_truncate_log(osb);
@@ -6240,7 +6240,7 @@ int ocfs2_complete_truncate_log_recovery(struct ocfs2_super *osb,
 	}
 
 bail_up:
-	inode_unlock(tl_inode);
+	mutex_unlock(&tl_inode->i_mutex);
 
 	return status;
 }
@@ -6347,7 +6347,7 @@ static int ocfs2_free_cached_blocks(struct ocfs2_super *osb,
 		goto out;
 	}
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 
 	ret = ocfs2_inode_lock(inode, &di_bh, 1);
 	if (ret) {
@@ -6396,7 +6396,7 @@ out_unlock:
 	ocfs2_inode_unlock(inode, 1);
 	brelse(di_bh);
 out_mutex:
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	iput(inode);
 out:
 	while(head) {
@@ -6440,7 +6440,7 @@ static int ocfs2_free_cached_clusters(struct ocfs2_super *osb,
 	handle_t *handle;
 	int ret = 0;
 
-	inode_lock(tl_inode);
+	mutex_lock(&tl_inode->i_mutex);
 
 	while (head) {
 		if (ocfs2_truncate_log_needs_flush(osb)) {
@@ -6472,7 +6472,7 @@ static int ocfs2_free_cached_clusters(struct ocfs2_super *osb,
 		}
 	}
 
-	inode_unlock(tl_inode);
+	mutex_unlock(&tl_inode->i_mutex);
 
 	while (head) {
 		/* Premature exit may have left some dangling items. */
@@ -7367,7 +7367,7 @@ int ocfs2_trim_fs(struct super_block *sb, struct fstrim_range *range)
 		goto out;
 	}
 
-	inode_lock(main_bm_inode);
+	mutex_lock(&main_bm_inode->i_mutex);
 
 	ret = ocfs2_inode_lock(main_bm_inode, &main_bm_bh, 0);
 	if (ret < 0) {
@@ -7435,7 +7435,7 @@ out_unlock:
 	ocfs2_inode_unlock(main_bm_inode, 0);
 	brelse(main_bm_bh);
 out_mutex:
-	inode_unlock(main_bm_inode);
+	mutex_unlock(&main_bm_inode->i_mutex);
 	iput(main_bm_inode);
 out:
 	return ret;

@@ -1761,17 +1761,17 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
 	loff_t pos;
 	size_t count;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 	err = generic_write_checks(iocb, from);
 	if (err <= 0) {
-		inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 		return err;
 	}
 
 	current->backing_dev_info = inode_to_bdi(inode);
 	err = file_remove_privs(file);
 	if (err) {
-		inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 		goto out;
 	}
 
@@ -1782,7 +1782,7 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
 	 * to stop this write operation to ensure FS consistency.
 	 */
 	if (test_bit(BTRFS_FS_STATE_ERROR, &root->fs_info->fs_state)) {
-		inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 		err = -EROFS;
 		goto out;
 	}
@@ -1803,7 +1803,7 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
 		end_pos = round_up(pos + count, root->sectorsize);
 		err = btrfs_cont_expand(inode, i_size_read(inode), end_pos);
 		if (err) {
-			inode_unlock(inode);
+			mutex_unlock(&inode->i_mutex);
 			goto out;
 		}
 	}
@@ -1819,7 +1819,7 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
 			iocb->ki_pos = pos + num_written;
 	}
 
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 
 	/*
 	 * We also have to set last_sub_trans to the current log transid,
@@ -1917,7 +1917,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
 	if (ret)
 		return ret;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 	atomic_inc(&root->log_batch);
 	full_sync = test_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
 			     &BTRFS_I(inode)->runtime_flags);
@@ -1969,7 +1969,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
 		ret = start_ordered_ops(inode, start, end);
 	}
 	if (ret) {
-		inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 		goto out;
 	}
 	atomic_inc(&root->log_batch);
@@ -2015,7 +2015,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
 		 */
 		clear_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
 			  &BTRFS_I(inode)->runtime_flags);
-		inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 		goto out;
 	}
 
@@ -2039,7 +2039,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
 	trans = btrfs_start_transaction(root, 0);
 	if (IS_ERR(trans)) {
 		ret = PTR_ERR(trans);
-		inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 		goto out;
 	}
 	trans->sync = true;
@@ -2062,7 +2062,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
 	 * file again, but that will end up using the synchronization
 	 * inside btrfs_sync_log to keep things safe.
 	 */
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 
 	/*
 	 * If any of the ordered extents had an error, just return it to user
@@ -2311,7 +2311,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
 	if (ret)
 		return ret;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 	ino_size = round_up(inode->i_size, PAGE_CACHE_SIZE);
 	ret = find_first_non_hole(inode, &offset, &len);
 	if (ret < 0)
@@ -2351,7 +2351,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
 		truncated_page = true;
 		ret = btrfs_truncate_page(inode, offset, 0, 0);
 		if (ret) {
-			inode_unlock(inode);
+			mutex_unlock(&inode->i_mutex);
 			return ret;
 		}
 	}
@@ -2427,7 +2427,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
 		ret = btrfs_wait_ordered_range(inode, lockstart,
 					       lockend - lockstart + 1);
 		if (ret) {
-			inode_unlock(inode);
+			mutex_unlock(&inode->i_mutex);
 			return ret;
 		}
 	}
@@ -2582,7 +2582,7 @@ out_only_mutex:
 			ret = btrfs_end_transaction(trans, root);
 		}
 	}
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	if (ret && !err)
 		err = ret;
 	return err;
@@ -2666,7 +2666,7 @@ static long btrfs_fallocate(struct file *file, int mode,
 	if (ret < 0)
 		return ret;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 	ret = inode_newsize_ok(inode, alloc_end);
 	if (ret)
 		goto out;
@@ -2824,7 +2824,7 @@ out:
 	 * So this is completely used as cleanup.
 	 */
 	btrfs_qgroup_free_data(inode, alloc_start, alloc_end - alloc_start);
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	/* Let go of our reservation. */
 	btrfs_free_reserved_data_space(inode, alloc_start,
 				       alloc_end - alloc_start);
@@ -2900,7 +2900,7 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int whence)
 	struct inode *inode = file->f_mapping->host;
 	int ret;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 	switch (whence) {
 	case SEEK_END:
 	case SEEK_CUR:
@@ -2909,20 +2909,20 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int whence)
 	case SEEK_DATA:
 	case SEEK_HOLE:
 		if (offset >= i_size_read(inode)) {
-			inode_unlock(inode);
+			mutex_unlock(&inode->i_mutex);
 			return -ENXIO;
 		}
 
 		ret = find_desired_extent(inode, &offset, whence);
 		if (ret) {
-			inode_unlock(inode);
+			mutex_unlock(&inode->i_mutex);
 			return ret;
 		}
 	}
 
 	offset = vfs_setpos(file, offset, inode->i_sb->s_maxbytes);
 out:
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	return offset;
 }
 

@@ -197,7 +197,7 @@ void ceph_fscache_register_inode_cookie(struct ceph_fs_client* fsc,
 		return;
 
 	/* Avoid multiple racing open requests */
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 
 	if (ci->fscache)
 		goto done;
@@ -207,7 +207,7 @@ void ceph_fscache_register_inode_cookie(struct ceph_fs_client* fsc,
 					     ci, true);
 	fscache_check_consistency(ci->fscache);
 done:
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 
 }
 

@@ -1878,7 +1878,7 @@ static int __ocfs2_change_file_space(struct file *file, struct inode *inode,
 	if (ocfs2_is_hard_readonly(osb) || ocfs2_is_soft_readonly(osb))
 		return -EROFS;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 
 	/*
 	 * This prevents concurrent writes on other nodes
@@ -1997,7 +1997,7 @@ out_rw_unlock:
 	ocfs2_rw_unlock(inode, 1);
 
 out:
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	return ret;
 }
 
@@ -2305,7 +2305,7 @@ static ssize_t ocfs2_file_write_iter(struct kiocb *iocb,
 	appending = iocb->ki_flags & IOCB_APPEND ? 1 : 0;
 	direct_io = iocb->ki_flags & IOCB_DIRECT ? 1 : 0;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 
 relock:
 	/*
@@ -2441,7 +2441,7 @@ out:
 		ocfs2_rw_unlock(inode, rw_level);
 
 out_mutex:
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 
 	if (written)
 		ret = written;
@@ -2553,7 +2553,7 @@ static loff_t ocfs2_file_llseek(struct file *file, loff_t offset, int whence)
 	struct inode *inode = file->f_mapping->host;
 	int ret = 0;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 
 	switch (whence) {
 	case SEEK_SET:
@@ -2591,7 +2591,7 @@ static loff_t ocfs2_file_llseek(struct file *file, loff_t offset, int whence)
 	offset = vfs_setpos(file, offset, inode->i_sb->s_maxbytes);
 
 out:
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	if (ret)
 		return ret;
 	return offset;

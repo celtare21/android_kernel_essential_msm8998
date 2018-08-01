@@ -198,7 +198,7 @@ loff_t default_llseek(struct file *file, loff_t offset, int whence)
 	struct inode *inode = file_inode(file);
 	loff_t retval;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 	switch (whence) {
 		case SEEK_END:
 			offset += i_size_read(inode);
@@ -243,7 +243,7 @@ loff_t default_llseek(struct file *file, loff_t offset, int whence)
 		retval = offset;
 	}
 out:
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	return retval;
 }
 EXPORT_SYMBOL(default_llseek);

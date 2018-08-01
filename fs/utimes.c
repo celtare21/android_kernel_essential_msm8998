@@ -90,9 +90,9 @@ static int utimes_common(struct path *path, struct timespec *times)
 		newattrs.ia_valid |= ATTR_TOUCH;
 	}
 retry_deleg:
-        inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 	error = notify_change2(path->mnt, path->dentry, &newattrs, &delegated_inode);
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	if (delegated_inode) {
 		error = break_deleg_wait(&delegated_inode);
 		if (!error)

@@ -1863,7 +1863,7 @@ static loff_t ll_dir_seek(struct file *file, loff_t offset, int origin)
 	int api32 = ll_need_32bit_api(sbi);
 	loff_t ret = -EINVAL;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 	switch (origin) {
 	case SEEK_SET:
 		break;
@@ -1901,7 +1901,7 @@ static loff_t ll_dir_seek(struct file *file, loff_t offset, int origin)
 	goto out;
 
 out:
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	return ret;
 }
 

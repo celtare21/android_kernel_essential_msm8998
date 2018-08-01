@@ -782,7 +782,7 @@ int f2fs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
 			return ret;
 	}
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 
 	if (len >= isize) {
 		whole_file = true;
@@ -867,7 +867,7 @@ out:
 	if (ret == 1)
 		ret = 0;
 
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	return ret;
 }
 

@@ -55,10 +55,10 @@ nfsd4_security_inode_setsecctx(struct svc_fh *resfh, struct xdr_netobj *label, u
 	struct inode *inode = d_inode(resfh->fh_dentry);
 	int status;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 	status = security_inode_setsecctx(resfh->fh_dentry,
 		label->data, label->len);
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 
 	if (status)
 		/*

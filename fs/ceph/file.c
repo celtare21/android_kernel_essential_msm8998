@@ -1012,7 +1012,7 @@ static ssize_t ceph_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	if (!prealloc_cf)
 		return -ENOMEM;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 
 	/* We can write back this queue in page reclaim */
 	current->backing_dev_info = inode_to_bdi(inode);
@@ -1068,7 +1068,7 @@ retry_snap:
 	    (iocb->ki_flags & IOCB_DIRECT) || (fi->flags & CEPH_F_SYNC)) {
 		struct ceph_snap_context *snapc;
 		struct iov_iter data;
-		inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 
 		spin_lock(&ci->i_ceph_lock);
 		if (__ceph_have_pending_cap_snap(ci)) {
@@ -1095,7 +1095,7 @@ retry_snap:
 				"got EOLDSNAPC, retrying\n",
 				inode, ceph_vinop(inode),
 				pos, (unsigned)count);
-			inode_lock(inode);
+			mutex_lock(&inode->i_mutex);
 			goto retry_snap;
 		}
 		if (written > 0)
@@ -1115,7 +1115,7 @@ retry_snap:
 			iocb->ki_pos = pos + written;
 		if (inode->i_size > old_size)
 			ceph_fscache_update_objectsize(inode);
-		inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 	}
 
 	if (written >= 0) {
@@ -1145,7 +1145,7 @@ retry_snap:
 	goto out_unlocked;
 
 out:
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 out_unlocked:
 	ceph_free_cap_flush(prealloc_cf);
 	current->backing_dev_info = NULL;
@@ -1160,7 +1160,7 @@ static loff_t ceph_llseek(struct file *file, loff_t offset, int whence)
 	struct inode *inode = file->f_mapping->host;
 	int ret;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 
 	if (whence == SEEK_END || whence == SEEK_DATA || whence == SEEK_HOLE) {
 		ret = ceph_do_getattr(inode, CEPH_STAT_CAP_SIZE, false);
@@ -1205,7 +1205,7 @@ static loff_t ceph_llseek(struct file *file, loff_t offset, int whence)
 	offset = vfs_setpos(file, offset, inode->i_sb->s_maxbytes);
 
 out:
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	return offset;
 }
 
@@ -1361,7 +1361,7 @@ static long ceph_fallocate(struct file *file, int mode,
 	if (!prealloc_cf)
 		return -ENOMEM;
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 
 	if (ceph_snap(inode) != CEPH_NOSNAP) {
 		ret = -EROFS;
@@ -1416,7 +1416,7 @@ static long ceph_fallocate(struct file *file, int mode,
 
 	ceph_put_cap_refs(ci, got);
 unlock:
-	inode_unlock(inode);
+	mutex_unlock(&inode->i_mutex);
 	ceph_free_cap_flush(prealloc_cf);
 	return ret;
 }

@@ -415,7 +415,7 @@ void ocfs2_shutdown_local_alloc(struct ocfs2_super *osb)
 		goto out;
 	}
 
-	inode_lock(main_bm_inode);
+	mutex_lock(&main_bm_inode->i_mutex);
 
 	status = ocfs2_inode_lock(main_bm_inode, &main_bm_bh, 1);
 	if (status < 0) {
@@ -469,7 +469,7 @@ out_unlock:
 	ocfs2_inode_unlock(main_bm_inode, 1);
 
 out_mutex:
-	inode_unlock(main_bm_inode);
+	mutex_unlock(&main_bm_inode->i_mutex);
 	iput(main_bm_inode);
 
 out:
@@ -508,7 +508,7 @@ int ocfs2_begin_local_alloc_recovery(struct ocfs2_super *osb,
 		goto bail;
 	}
 
-	inode_lock(inode);
+	mutex_lock(&inode->i_mutex);
 
 	status = ocfs2_read_inode_block_full(inode, &alloc_bh,
 					     OCFS2_BH_IGNORE_CACHE);
@@ -541,7 +541,7 @@ bail:
 	brelse(alloc_bh);
 
 	if (inode) {
-		inode_unlock(inode);
+		mutex_unlock(&inode->i_mutex);
 		iput(inode);
 	}
 
@@ -573,7 +573,7 @@ int ocfs2_complete_local_alloc_recovery(struct ocfs2_super *osb,
 		goto out;
 	}
 
-	inode_lock(main_bm_inode);
+	mutex_lock(&main_bm_inode->i_mutex);
 
 	status = ocfs2_inode_lock(main_bm_inode, &main_bm_bh, 1);
 	if (status < 0) {
@@ -603,7 +603,7 @@ out_unlock:
 	ocfs2_inode_unlock(main_bm_inode, 1);
 
 out_mutex:
-	inode_unlock(main_bm_inode);
+	mutex_unlock(&main_bm_inode->i_mutex);
 
 	brelse(main_bm_bh);
 
@@ -645,7 +645,7 @@ int ocfs2_reserve_local_alloc_bits(struct ocfs2_super *osb,
 		goto bail;
 	}
 
-	inode_lock(local_alloc_inode);
+	mutex_lock(&local_alloc_inode->i_mutex);
 
 	/*
 	 * We must double check state and allocator bits because
@@ -711,7 +711,7 @@ int ocfs2_reserve_local_alloc_bits(struct ocfs2_super *osb,
 	status = 0;
 bail:
 	if (status < 0 && local_alloc_inode) {
-		inode_unlock(local_alloc_inode);
+		mutex_unlock(&local_alloc_inode->i_mutex);
 		iput(local_alloc_inode);
 	}
 

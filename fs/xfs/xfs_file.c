@@ -55,7 +55,7 @@ xfs_rw_ilock(
 	int			type)
 {
 	if (type & XFS_IOLOCK_EXCL)
-		inode_lock(VFS_I(ip));
+		mutex_lock(&VFS_I(ip)->i_mutex);
 	xfs_ilock(ip, type);
 }
 
@@ -66,7 +66,7 @@ xfs_rw_iunlock(
 {
 	xfs_iunlock(ip, type);
 	if (type & XFS_IOLOCK_EXCL)
-		inode_unlock(VFS_I(ip));
+		mutex_unlock(&VFS_I(ip)->i_mutex);
 }
 
 static inline void
@@ -76,7 +76,7 @@ xfs_rw_ilock_demote(
 {
 	xfs_ilock_demote(ip, type);
 	if (type & XFS_IOLOCK_EXCL)
-		inode_unlock(VFS_I(ip));
+		mutex_unlock(&VFS_I(ip)->i_mutex);
 }
 
 /*

@@ -644,11 +644,11 @@ static ssize_t bm_entry_write(struct file *file, const char __user *buffer,
 	case 3:
 		/* Delete this handler. */
 		root = dget(file->f_path.dentry->d_sb->s_root);
-		inode_lock(d_inode(root));
+		mutex_lock(&d_inode(root)->i_mutex);
 
 		kill_node(e);
 
-		inode_unlock(d_inode(root));
+		mutex_unlock(&d_inode(root)->i_mutex);
 		dput(root);
 		break;
 	default:
@@ -681,7 +681,7 @@ static ssize_t bm_register_write(struct file *file, const char __user *buffer,
 		return PTR_ERR(e);
 
 	root = dget(sb->s_root);
-	inode_lock(d_inode(root));
+	mutex_lock(&d_inode(root)->i_mutex);
 	dentry = lookup_one_len(e->name, root, strlen(e->name));
 	err = PTR_ERR(dentry);
 	if (IS_ERR(dentry))
@@ -717,7 +717,7 @@ static ssize_t bm_register_write(struct file *file, const char __user *buffer,
 out2:
 	dput(dentry);
 out:
-	inode_unlock(d_inode(root));
+	mutex_unlock(&d_inode(root)->i_mutex);
 	dput(root);
 
 	if (err) {
@@ -760,12 +760,12 @@ static ssize_t bm_status_write(struct file *file, const char __user *buffer,
 	case 3:
 		/* Delete all handlers. */
 		root = dget(file->f_path.dentry->d_sb->s_root);
-		inode_lock(d_inode(root));
+		mutex_lock(&d_inode(root)->i_mutex);
 
 		while (!list_empty(&entries))
 			kill_node(list_entry(entries.next, Node, list));
 
-		inode_unlock(d_inode(root));
+		mutex_unlock(&d_inode(root)->i_mutex);
 		dput(root);
 		break;
 	default:

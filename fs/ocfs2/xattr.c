@@ -2505,7 +2505,7 @@ static int ocfs2_xattr_free_block(struct inode *inode,
 		mlog_errno(ret);
 		goto out;
 	}
-	inode_lock(xb_alloc_inode);
+	mutex_lock(&xb_alloc_inode->i_mutex);
 
 	ret = ocfs2_inode_lock(xb_alloc_inode, &xb_alloc_bh, 1);
 	if (ret < 0) {
@@ -2530,7 +2530,7 @@ out_unlock:
 	ocfs2_inode_unlock(xb_alloc_inode, 1);
 	brelse(xb_alloc_bh);
 out_mutex:
-	inode_unlock(xb_alloc_inode);
+	mutex_unlock(&xb_alloc_inode->i_mutex);
 	iput(xb_alloc_inode);
 out:
 	brelse(blk_bh);
@@ -3600,17 +3600,17 @@ int ocfs2_xattr_set(struct inode *inode,
 		}
 	}
 
-	inode_lock(tl_inode);
+	mutex_lock(&tl_inode->i_mutex);
 
 	if (ocfs2_truncate_log_needs_flush(osb)) {
 		ret = __ocfs2_flush_truncate_log(osb);
 		if (ret < 0) {
-			inode_unlock(tl_inode);
+			mutex_unlock(&tl_inode->i_mutex);
 			mlog_errno(ret);
 			goto cleanup;
 		}
 	}
-	inode_unlock(tl_inode);
+	mutex_unlock(&tl_inode->i_mutex);
 
 	ret = ocfs2_init_xattr_set_ctxt(inode, di, &xi, &xis,
 					&xbs, &ctxt, ref_meta, &credits);
@@ -5443,7 +5443,7 @@ static int ocfs2_rm_xattr_cluster(struct inode *inode,
 		return ret;
 	}
 
-	inode_lock(tl_inode);
+	mutex_lock(&tl_inode->i_mutex);
 
 	if (ocfs2_truncate_log_needs_flush(osb)) {
 		ret = __ocfs2_flush_truncate_log(osb);
@@ -5487,7 +5487,7 @@ out_commit:
 out:
 	ocfs2_schedule_truncate_log_flush(osb, 1);
 
-	inode_unlock(tl_inode);
+	mutex_unlock(&tl_inode->i_mutex);
 
 	if (meta_ac)
 		ocfs2_free_alloc_context(meta_ac);
