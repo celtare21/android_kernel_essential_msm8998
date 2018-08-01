@@ -1089,7 +1089,7 @@ void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
 
 static inline bool is_per_cpu_kthread(struct task_struct *p)
 {
-	if (!(p->flags & PF_KTHREAD) || p->nr_cpus_allowed != 1)
+	if (!(p->flags & PF_KTHREAD) || tsk_nr_cpus_allowed(p) != 1)
 		return false;
 
 	return true;
