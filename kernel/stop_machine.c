@@ -458,6 +458,7 @@ static void cpu_stopper_thread(unsigned int cpu)
 {
 	struct cpu_stopper *stopper = &per_cpu(cpu_stopper, cpu);
 	struct cpu_stop_work *work;
+	int ret;
 
 repeat:
 	work = NULL;
@@ -473,19 +474,23 @@ repeat:
 		cpu_stop_fn_t fn = work->fn;
 		void *arg = work->arg;
 		struct cpu_stop_done *done = work->done;
-		int ret;
+		char ksym_buf[KSYM_NAME_LEN] __maybe_unused;
 
-		/* cpu stop callbacks must not sleep, make in_atomic() == T */
-		preempt_count_inc();
+		/* cpu stop callbacks are not allowed to sleep */
+		preempt_disable();
 		ret = fn(arg);
 		if (done) {
 			if (ret)
 				done->ret = ret;
 			cpu_stop_signal_done(done);
 		}
-		preempt_count_dec();
+		/* restore preemption and check it's still balanced */
+		preempt_enable();
 		WARN_ONCE(preempt_count(),
-			  "cpu_stop: %pf(%p) leaked preempt count\n", fn, arg);
+			  "cpu_stop: %s(%p) leaked preempt count\n",
+			  kallsyms_lookup((unsigned long)fn, NULL, NULL, NULL,
+					  ksym_buf), arg);
+
 		goto repeat;
 	}
 }
