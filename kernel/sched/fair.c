@@ -7091,7 +7091,7 @@ static int cpu_util_wake(int cpu, struct task_struct *p);
 
 static unsigned long capacity_spare_wake(int cpu, struct task_struct *p)
 {
-	return max_t(long, capacity_of(cpu) - cpu_util_wake(cpu, p), 0);
+	return capacity_orig_of(cpu) - cpu_util_wake(cpu, p);
 }
 
 /*
