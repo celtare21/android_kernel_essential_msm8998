@@ -7,7 +7,7 @@
 #include <linux/debugobjects.h>
 #include <linux/stringify.h>
 
-struct tvec_base;
+struct timer_base;
 
 struct timer_list {
 	/*
@@ -225,7 +225,7 @@ extern enum hrtimer_restart it_real_fn(struct hrtimer *);
 #if defined(CONFIG_SMP) && defined(CONFIG_NO_HZ_COMMON)
 #include <linux/sysctl.h>
 
-extern struct tvec_base tvec_base_deferrable;
+extern struct timer_base timer_base_deferrable;
 
 extern unsigned int sysctl_timer_migration;
 int timer_migration_handler(struct ctl_table *table, int write,

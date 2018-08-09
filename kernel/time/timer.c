@@ -206,16 +206,16 @@ struct timer_base {
 	struct hlist_head	vectors[WHEEL_SIZE];
 } ____cacheline_aligned;
 
-static inline void __run_timers(struct tvec_base *base);
+static inline void __run_timers(struct timer_base *base);
 
-static DEFINE_PER_CPU(struct timer_base, timer_bases[NR_BASES]);
+static DEFINE_PER_CPU(struct timer_base, timer_base[NR_BASES]);
 struct timer_base timer_base_deferrable;
 static atomic_t deferrable_pending;
 
 #if defined(CONFIG_SMP) && defined(CONFIG_NO_HZ_COMMON)
 unsigned int sysctl_timer_migration = 1;
 
-struct tvec_base tvec_base_deferrable;
+struct timer_base timer_base_deferrable;
 static atomic_t deferrable_pending;
 
 void timers_update_migration(bool update_nohz)
@@ -224,18 +224,18 @@ void timers_update_migration(bool update_nohz)
 	unsigned int cpu;
 
 	/* Avoid the loop, if nothing to update */
-	if (this_cpu_read(timer_bases[BASE_STD].migration_enabled) == on)
+	if (this_cpu_read(timer_base[BASE_STD].migration_enabled) == on)
 		return;
 
 	for_each_possible_cpu(cpu) {
-		per_cpu(timer_bases[BASE_STD].migration_enabled, cpu) = on;
-		per_cpu(timer_bases[BASE_DEF].migration_enabled, cpu) = on;
-		per_cpu(hrtimer_bases.migration_enabled, cpu) = on;
+		per_cpu(timer_base[BASE_STD].migration_enabled, cpu) = on;
+		per_cpu(timer_base[BASE_DEF].migration_enabled, cpu) = on;
+		per_cpu(hrtimer_base.migration_enabled, cpu) = on;
 		if (!update_nohz)
 			continue;
-		per_cpu(timer_bases[BASE_STD].nohz_active, cpu) = true;
-		per_cpu(timer_bases[BASE_DEF].nohz_active, cpu) = true;
-		per_cpu(hrtimer_bases.nohz_active, cpu) = true;
+		per_cpu(timer_base[BASE_STD].nohz_active, cpu) = true;
+		per_cpu(timer_base[BASE_DEF].nohz_active, cpu) = true;
+		per_cpu(hrtimer_base.nohz_active, cpu) = true;
 	}
 
 	timer_base_deferrable.migration_enabled = on;
@@ -261,10 +261,10 @@ static inline struct timer_base *get_target_base(struct timer_base *base,
 {
 	if (!pinned && !(timer_flags & TIMER_PINNED_ON_CPU) &&
 	    (timer_flags & TIMER_DEFERRABLE))
-		return &tvec_base_deferrable;
+		return &timer_base_deferrable;
 	if (pinned || !base->migration_enabled)
-		return this_cpu_ptr(&timer_bases);
-	return per_cpu_ptr(&timer_bases, get_nohz_timer_target());
+		return this_cpu_ptr(&timer_base);
+	return per_cpu_ptr(&timer_base, get_nohz_timer_target());
 }
 
 static inline void __run_deferrable_timers(void)
@@ -273,17 +273,17 @@ static inline void __run_deferrable_timers(void)
 		tick_do_timer_cpu == TICK_DO_TIMER_NONE) ||
 		tick_do_timer_cpu == smp_processor_id()) {
 		if (time_after_eq(jiffies,
-			tvec_base_deferrable.timer_jiffies))
-			__run_timers(&tvec_base_deferrable);
+			timer_base_deferrable.timer_jiffies))
+			__run_timers(&timer_base_deferrable);
 	}
 }
 
 static inline void init_timer_deferrable_global(void)
 {
-	tvec_base_deferrable.cpu = nr_cpu_ids;
-	spin_lock_init(&tvec_base_deferrable.lock);
-	tvec_base_deferrable.timer_jiffies = jiffies;
-	tvec_base_deferrable.next_timer = tvec_base_deferrable.timer_jiffies;
+	timer_base_deferrable.cpu = nr_cpu_ids;
+	spin_lock_init(&timer_base_deferrable.lock);
+	timer_base_deferrable.timer_jiffies = jiffies;
+	timer_base_deferrable.next_timer = timer_base_deferrable.timer_jiffies;
 }
 
 static inline void __run_deferrable_timers(void)
@@ -298,9 +298,9 @@ static inline void init_timer_deferrable_global(void)
 	 */
 }
 
-static inline struct tvec_base *get_timer_base(u32 timer_flags)
+static inline struct timer_base *get_timer_base(u32 timer_flags)
 {
-	return per_cpu_ptr(&tvec_bases, timer_flags & TIMER_CPUMASK);
+	return per_cpu_ptr(&timer_base, timer_flags & TIMER_CPUMASK);
 }
 #endif
 
@@ -874,7 +874,7 @@ static int detach_if_pending(struct timer_list *timer, struct timer_base *base,
 
 static inline struct timer_base *get_timer_cpu_base(u32 tflags, u32 cpu)
 {
-	struct timer_base *base = per_cpu_ptr(&timer_bases[BASE_STD], cpu);
+	struct timer_base *base = per_cpu_ptr(&timer_base[BASE_STD], cpu);
 
 	/*
 	 * If the timer is deferrable and NO_HZ_COMMON is set then we need
@@ -883,14 +883,14 @@ static inline struct timer_base *get_timer_cpu_base(u32 tflags, u32 cpu)
         if (IS_ENABLED(CONFIG_NO_HZ_COMMON) && (tflags & TIMER_DEFERRABLE)){
 		base = &timer_base_deferrable;
 		if (tflags & TIMER_PINNED)
-			base = per_cpu_ptr(&timer_bases[BASE_DEF], cpu);
+			base = per_cpu_ptr(&timer_base[BASE_DEF], cpu);
 	}
 	return base;
 }
 
 static inline struct timer_base *get_timer_this_cpu_base(u32 tflags)
 {
-	struct timer_base *base = this_cpu_ptr(&timer_bases[BASE_STD]);
+	struct timer_base *base = this_cpu_ptr(&timer_base[BASE_STD]);
 
 	/*
 	 * If the timer is deferrable and NO_HZ_COMMON is set then we need
@@ -899,7 +899,7 @@ static inline struct timer_base *get_timer_this_cpu_base(u32 tflags)
         if (IS_ENABLED(CONFIG_NO_HZ_COMMON) && (tflags & TIMER_DEFERRABLE)){
 		base = &timer_base_deferrable;
 		if (tflags & TIMER_PINNED)
-			base = this_cpu_ptr(&timer_bases[BASE_DEF]);
+			base = this_cpu_ptr(&timer_base[BASE_DEF]);
 	}
 	return base;
 }
@@ -960,7 +960,7 @@ static inline void forward_timer_base(struct timer_base *base) { }
 
 
 /*
- * We are using hashed locking: Holding per_cpu(timer_bases[x]).lock means
+ * We are using hashed locking: Holding per_cpu(timer_base[x]).lock means
  * that all timers which are tied to this base are locked, and the base itself
  * is locked too.
  *
@@ -1580,7 +1580,7 @@ bool check_pending_deferrable_timers(int cpu)
  */
 u64 get_next_timer_interrupt(unsigned long basej, u64 basem)
 {
-	struct timer_base *base = this_cpu_ptr(&timer_bases[BASE_STD]);
+	struct timer_base *base = this_cpu_ptr(&timer_base[BASE_STD]);
 	u64 expires = KTIME_MAX;
 	unsigned long nextevt;
 	bool is_max_delta;
@@ -1638,7 +1638,7 @@ u64 get_next_timer_interrupt(unsigned long basej, u64 basem)
  */
 void timer_clear_idle(void)
 {
-	struct timer_base *base = this_cpu_ptr(&timer_bases[BASE_STD]);
+	struct timer_base *base = this_cpu_ptr(&timer_base[BASE_STD]);
 
 	/*
 	 * We do this unlocked. The worst outcome is a remote enqueue sending
@@ -1732,7 +1732,7 @@ static inline void __run_timers(struct timer_base *base)
  */
 static void run_timer_softirq(struct softirq_action *h)
 {
-	struct timer_base *base = this_cpu_ptr(&timer_bases[BASE_STD]);
+	struct timer_base *base = this_cpu_ptr(&timer_base[BASE_STD]);
 
 	__run_deferrable_timers();
 	/*
@@ -1750,7 +1750,7 @@ static void run_timer_softirq(struct softirq_action *h)
 
 	__run_timers(base);
 	if (IS_ENABLED(CONFIG_NO_HZ_COMMON))
-		__run_timers(this_cpu_ptr(&timer_bases[BASE_DEF]));
+		__run_timers(this_cpu_ptr(&timer_base[BASE_DEF]));
 
 	if ((atomic_cmpxchg(&deferrable_pending, 1, 0) &&
 		tick_do_timer_cpu == TICK_DO_TIMER_NONE) ||
@@ -1763,7 +1763,7 @@ static void run_timer_softirq(struct softirq_action *h)
  */
 void run_local_timers(void)
 {
-	struct timer_base *base = this_cpu_ptr(&timer_bases[BASE_STD]);
+	struct timer_base *base = this_cpu_ptr(&timer_base[BASE_STD]);
 
 	hrtimer_run_queues();
 	/* Raise the softirq only if required. */
@@ -1941,8 +1941,8 @@ static void __migrate_timers(int cpu, bool remove_pinned)
 		BUG_ON(cpu_online(cpu));
 
 	for (b = 0; b < NR_BASES; b++) {
-		old_base = per_cpu_ptr(&timer_bases[b], cpu);
-		new_base = get_cpu_ptr(&timer_bases[b]);
+		old_base = per_cpu_ptr(&timer_base[b], cpu);
+		new_base = get_cpu_ptr(&timer_base[b]);
 		/*
 		 * The caller is globally serialized and nobody else
 		 * takes two locks at once, deadlock is not possible.
@@ -1964,7 +1964,7 @@ static void __migrate_timers(int cpu, bool remove_pinned)
 
 		spin_unlock(&old_base->lock);
 		spin_unlock_irq(&new_base->lock, flags);
-		put_cpu_ptr(&timer_bases);
+		put_cpu_ptr(&timer_base);
 	}
 }
 
@@ -2009,7 +2009,7 @@ static void __init init_timer_cpu(int cpu)
 	int i;
 
 	for (i = 0; i < NR_BASES; i++) {
-		base = per_cpu_ptr(&timer_bases[i], cpu);
+		base = per_cpu_ptr(&timer_base[i], cpu);
 		base->cpu = cpu;
 		spin_lock_init(&base->lock);
 		base->clk = jiffies;
