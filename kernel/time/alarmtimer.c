@@ -62,18 +62,6 @@ static DEFINE_SPINLOCK(rtcdev_lock);
 static struct mutex power_on_alarm_lock;
 static struct alarm init_alarm;
 
-static void alarmtimer_triggered_func(void *p)
-{
-	struct rtc_device *rtc = rtcdev;
-
-	if (!(rtc->irq_data & RTC_AF))
-		return;
-	__pm_wakeup_event(ws, 2 * MSEC_PER_SEC);
-}
-
-static struct rtc_task alarmtimer_rtc_task = {
-	.func = alarmtimer_triggered_func
-};
 /**
  * power_on_alarm_init - Init power on alarm value
  *
