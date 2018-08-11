@@ -1557,11 +1557,6 @@ static void migrate_timers(int cpu)
 	__migrate_timers(cpu, false, true);
 }
 
-void timer_quiesce_cpu(void *cpup)
-{
-	__migrate_timers(*(int *)cpup, true, false);
-}
-
 static int timer_cpu_notify(struct notifier_block *self,
 				unsigned long action, void *hcpu)
 {
