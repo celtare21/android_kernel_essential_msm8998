@@ -1300,7 +1300,6 @@ static void expire_timers(struct timer_base *base, struct hlist_head *head)
 		unsigned long data;
 
 		timer = hlist_entry(head->first, struct timer_list, entry);
-		timer_stats_account_timer(timer);
 
 		base->running_timer = timer;
 		detach_timer(timer, true);
@@ -1853,6 +1852,13 @@ int timers_dead_cpu(unsigned int cpu)
 	BUG_ON(cpu_online(cpu));
 	__migrate_timers(cpu, true);
 	return 0;
+}
+
+/* Migrate timers from 'cpu' to this_cpu */
+static void migrate_timers(int cpu)
+{
+	BUG_ON(cpu_online(cpu));
+	__migrate_timers(cpu, true);
 }
 
 static int timer_cpu_notify(struct notifier_block *self,
